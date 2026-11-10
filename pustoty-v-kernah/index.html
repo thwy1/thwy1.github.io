@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Пустоты в кернах асфальтобетона — расчёт по ГОСТ Р 58401.10 | LabKit</title>
+<meta name="description" content="Бесплатный расчёт объёмной плотности кернов и остаточной пористости (пустот) асфальтобетона по ГОСТ Р 58401.10 с проверкой норм ГОСТ Р 58406.2 и 58406.1.">
+<link rel="canonical" href="https://thwy1.github.io/pustoty-v-kernah/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Пустоты в кернах асфальтобетона онлайн">
+<meta property="og:description" content="Бесплатный расчёт объёмной плотности кернов и остаточной пористости (пустот) асфальтобетона по ГОСТ Р 58401.10 с проверкой норм ГОСТ Р 58406.2 и 58406.1.">
+<meta property="og:url" content="https://thwy1.github.io/pustoty-v-kernah/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23007aff'/%3E%3Ctext x='16' y='22' font-family='Arial' font-weight='700' font-size='17' fill='white' text-anchor='middle'%3EL%3C/text%3E%3C/svg%3E">
+<style>
+/* Layout: one calm column like an iOS app screen — title, sieve card with live residues, result card, bot CTA, other calculators, short how-to for search. Same look as the LabKit mini-app. */
+:root {
+  --bg: #f2f2f7;
+  --surface: #ffffff;
+  --input: rgba(118, 118, 128, .12);
+  --fg: #1c1c1e;
+  --muted: #6e6e73;
+  --line: rgba(60, 60, 67, .18);
+  --accent: #007aff;
+  --accent-soft: rgba(0, 122, 255, .1);
+  --accent-ring: rgba(0, 122, 255, .22);
+  --accent-fg: #ffffff;
+  --ok: #248a3d;
+  --ok-soft: rgba(52, 199, 89, .14);
+  --bad: #d70015;
+  --bad-soft: rgba(255, 59, 48, .1);
+  --tg: #229ed9;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --ease: cubic-bezier(.32, .72, 0, 1);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #000000; --surface: #1c1c1e; --input: rgba(118, 118, 128, .24); --fg: #f5f5f7; --muted: #98989f; --line: rgba(84, 84, 88, .65);
+    --accent: #0a84ff; --accent-soft: rgba(10, 132, 255, .18); --accent-ring: rgba(10, 132, 255, .35);
+    --ok: #30d158; --ok-soft: rgba(48, 209, 88, .16); --bad: #ff453a; --bad-soft: rgba(255, 69, 58, .16); --tg: #2aabee; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #000000; --surface: #1c1c1e; --input: rgba(118, 118, 128, .24); --fg: #f5f5f7; --muted: #98989f; --line: rgba(84, 84, 88, .65);
+  --accent: #0a84ff; --accent-soft: rgba(10, 132, 255, .18); --accent-ring: rgba(10, 132, 255, .35);
+  --ok: #30d158; --ok-soft: rgba(48, 209, 88, .16); --bad: #ff453a; --bad-soft: rgba(255, 69, 58, .16); --tg: #2aabee; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.45 var(--font-body); letter-spacing: -.01em;
+  -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: calc(28px + env(safe-area-inset-top, 0px)) calc(48px + env(safe-area-inset-bottom, 0px));
+}
+.page { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.brand { text-decoration: none; display: flex; align-items: center; gap: 8px; font: 600 .9rem var(--font-body); color: var(--muted); }
+.brand i { width: 22px; height: 22px; border-radius: 6px; background: var(--accent); display: grid; place-items: center; color: #fff; font-style: normal; font-size: .75rem; font-weight: 700; }
+h1 { font: 700 clamp(1.9rem, 6vw, 2.4rem)/1.08 var(--font-display); letter-spacing: -.03em; margin: 4px 0 0; text-wrap: balance; }
+.lead { margin: 0; color: var(--muted); max-width: 52ch; }
+h2 { font: 600 1.15rem/1.25 var(--font-display); letter-spacing: -.02em; margin: 0; }
+.card { background: var(--surface); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.card-h { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.tag { font-size: .75rem; color: var(--muted); }
+.mass { display: flex; align-items: center; gap: 12px; }
+.mass label { flex: 1; color: var(--muted); font-size: .92rem; }
+input {
+  font: 600 1.05rem var(--font-body); font-variant-numeric: tabular-nums; color: var(--fg); background: var(--input);
+  border: 1px solid transparent; border-radius: 10px; padding: 9px 10px; width: 100%; min-width: 0; text-align: right;
+  -webkit-appearance: none; appearance: none; transition: border-color .2s, box-shadow .2s, background-color .2s;
+}
+input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-ring); }
+input.bad { border-color: var(--bad); background: var(--bad-soft); }
+.mass input { width: 7.5rem; flex: none; }
+.tbl { display: grid; grid-template-columns: minmax(3.6rem, auto) minmax(5rem, 1fr) 4.2rem 4.2rem; gap: 8px 10px; align-items: center; font-variant-numeric: tabular-nums; }
+.tbl .h { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+.tbl .h.r, .tbl output { text-align: right; }
+.tbl .s { font-weight: 600; }
+.tbl output { font-size: .98rem; }
+.tbl output.full { font-weight: 600; }
+.sep { grid-column: 1 / -1; height: .5px; background: var(--line); }
+.row-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn {
+  font: 600 .92rem var(--font-body); border: 0; border-radius: 10px; padding: 9px 14px; cursor: pointer;
+  background: var(--input); color: var(--accent); transition: transform .12s ease-out, opacity .15s;
+}
+.btn:active { transform: scale(.96); }
+.btn:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.result { gap: 10px; }
+.mk { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.mk-num { font: 700 3.4rem/1 var(--font-display); letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.mk-cap { color: var(--muted); font-size: .92rem; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; font: 600 .92rem var(--font-body); background: var(--input); }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.fact { background: var(--input); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+.fact span { font-size: .78rem; color: var(--muted); }
+.fact b { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.note { font-size: .88rem; color: var(--muted); margin: 0; }
+.note.warn { color: var(--bad); }
+.formula { font-size: .9rem; color: var(--muted); margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+.cta { background: var(--fg); color: var(--bg); }
+.cta h2 { font-size: 1.3rem; }
+.cta ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.cta li { display: flex; gap: 10px; align-items: baseline; opacity: .9; }
+.cta li::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--tg); transform: translateY(-2px); }
+.tg-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; border-radius: 14px; padding: 14px 18px;
+  background: var(--tg); color: #fff; font: 600 1.05rem var(--font-body); transition: transform .12s ease-out, opacity .15s;
+}
+.tg-btn:active { transform: scale(.97); opacity: .9; }
+.cta small { opacity: .65; text-align: center; }
+
+.list { background: var(--surface); border-radius: 16px; overflow: hidden; }
+.item { display: flex; align-items: center; gap: 12px; padding: 13px 16px; }
+.item + .item { box-shadow: inset 0 .5px 0 var(--line); }
+.item .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.item .tx b { font-weight: 600; }
+.item .tx span { font-size: .85rem; color: var(--muted); }
+.soon { font-size: .78rem; color: var(--muted); background: var(--input); border-radius: 999px; padding: 3px 9px; flex: none; }
+.how { display: flex; flex-direction: column; gap: 10px; }
+.how ol { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 6px; }
+.how p { margin: 0; }
+footer { color: var(--muted); font-size: .8rem; text-align: center; }
+@media (prefers-reduced-motion: reduce) { *, *::before { transition-duration: .01ms !important; } }
+
+/* добавки для калькуляторов щебня, бетона и кернов (поверх стилей страницы Мк) */
+[hidden] { display: none !important; }
+a.item { color: inherit; text-decoration: none; transition: background-color .2s; }
+a.item:active { background: var(--input); }
+a.item::after { content: ""; flex: none; width: 8px; height: 8px; border: solid var(--muted); border-width: 2px 2px 0 0; transform: rotate(45deg); opacity: .55; margin-right: 4px; }
+.item .ico { flex: none; width: 36px; height: 36px; border-radius: 9px; display: grid; place-items: center; color: #fff; font: 700 .8rem var(--font-body); }
+.fld-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.fld { display: flex; flex-direction: column; justify-content: flex-end; gap: 5px; min-width: 0; }
+.fld > span { font-size: .8rem; color: var(--muted); padding-left: 2px; }
+.fld input { text-align: left; }
+select {
+  width: 100%; min-width: 0; font: 600 1rem var(--font-body); color: var(--fg); background-color: var(--input);
+  border: 1px solid transparent; border-radius: 10px; padding: 9px 30px 9px 10px; -webkit-appearance: none; appearance: none; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5l3 3 3-3' fill='none' stroke='%238e8e93' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center;
+}
+select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-ring); }
+select option, select optgroup { background-color: var(--surface); color: var(--fg); }
+.info { font-size: .9rem; color: var(--muted); background: var(--input); border-radius: 12px; padding: 10px 12px; margin: 0; }
+.tbl5 { display: grid; grid-template-columns: 2.8rem minmax(4rem, 1fr) 3rem 3.4rem 3.8rem; gap: 8px 6px; align-items: center; font-variant-numeric: tabular-nums; }
+.tbl5 .h { font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .02em; }
+.tbl5 .h.r, .tbl5 output { text-align: right; }
+.tbl5 output { font-size: .92rem; }
+.tbl5 .s { font-weight: 600; }
+.tbl5 .nrm { font-size: .8rem; color: var(--muted); }
+.v-plus { color: var(--ok); font-weight: 600; }
+.v-minus { color: var(--bad); font-weight: 600; }
+.block { border-top: .5px solid var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+.block-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.block-h b { font-weight: 600; }
+.trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.trio .fld > span { font-size: .74rem; }
+.sub { font-size: .9rem; color: var(--muted); margin: 0; font-variant-numeric: tabular-nums; }
+.sub b { color: var(--fg); }
+.btn.x { color: var(--bad); background: transparent; padding: 6px 8px; }
+.btn.ghost { background: var(--accent-soft); color: var(--accent); }
+</style>
+<!-- Yandex.Metrika counter -->
+<script>
+(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r){return;}}k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,'script','https://mc.yandex.ru/metrika/tag.js?id=114173330','ym');
+ym(114173330,'init',{ssr:true,webvisor:true,clickmap:true,accurateTrackBounce:true,trackLinks:true});
+document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[href*="t.me/labkit_ru_bot"]');if(a){ym(114173330,'reachGoal','bot_click');}});
+</script>
+<noscript><div><img src="https://mc.yandex.ru/watch/114173330" style="position:absolute;left:-9999px" alt=""></div></noscript>
+<!-- /Yandex.Metrika counter -->
+</head>
+<body>
+<main class="page">
+  <div>
+    <a class="brand" href="../"><i aria-hidden="true">L</i>LabKit · все калькуляторы</a>
+    <h1>Пустоты в кернах асфальтобетона</h1>
+  </div>
+  <p class="lead">Выбери слой и тип смеси, вбей Gmm и массы кернов. Объёмная плотность, пустоты по каждому месту и соответствие ГОСТ Р 58406 считаются сразу. Бесплатно и без регистрации.</p>
+
+  <section class="card" aria-labelledby="h-cfg">
+    <div class="card-h"><h2 id="h-cfg">Слой и смесь</h2><span class="tag" id="cfg-gost">ГОСТ Р 58406.2-2020</span></div>
+    <div class="fld-grid">
+      <label class="fld"><span>Слой</span><select id="sloy"></select></label>
+      <label class="fld"><span>Тип смеси</span><select id="tip"></select></label>
+      <label class="fld"><span>Максимальная плотность Gmm, г/см³</span><input id="gmm" inputmode="decimal" autocomplete="off" value="2,540"></label>
+      <label class="fld" id="tro-wrap"><span>Назначение</span><select id="tro"><option value="0">Проезжая часть</option><option value="1">Тротуар, без движения авто</option></select></label>
+    </div>
+    <p class="info" id="cfg-info">—</p>
+  </section>
+
+  <section class="card" aria-labelledby="h-places">
+    <div class="card-h"><h2 id="h-places">Керны</h2><span class="tag">ГОСТ Р 58401.10-2019</span></div>
+    <p class="sub">A — масса сухого керна на воздухе, B — на воздухе после 4 мин в воде (поверхность протёрта), C — в воде. Все массы в граммах.</p>
+    <div id="places"></div>
+    <div class="row-btns">
+      <button type="button" class="btn ghost" id="b-add">+ Место отбора</button>
+      <button type="button" class="btn" id="b-clear">Очистить</button>
+      <button type="button" class="btn" id="b-ex">Вернуть пример</button>
+    </div>
+    <p class="note" id="ex-note">В полях стоит пример. Замени цифры на свои.</p>
+  </section>
+
+  <section class="card result" aria-labelledby="h-res" aria-live="polite">
+    <div class="card-h"><h2 id="h-res">Результат</h2><span class="tag">ГОСТ Р 58406</span></div>
+    <div class="mk"><span class="mk-num" id="pa">—</span><span class="mk-cap">пустоты в кернах Pa, %</span></div>
+    <div><span class="pill" id="verdict">Заполни массы кернов</span></div>
+    <p class="formula" id="r-rule"></p>
+    <p class="note" id="r-note"></p>
+  </section>
+
+  <section class="card cta" aria-labelledby="h-cta">
+    <h2 id="h-cta">Нужен готовый протокол в Word?</h2>
+    <ul>
+      <li>Песок, щебень, отсев, ЩПС, бетон и керны асфальта в одном месте</li>
+      <li>Нормы по ГОСТ подставляются сами, видно «соответствует / нет»</li>
+      <li>Протокол с шапкой, номером и подписью приходит в чат за секунду</li>
+      <li>Черновики не теряются, можно продолжить с телефона</li>
+    </ul>
+    <a class="tg-btn" href="https://t.me/labkit_ru_bot" target="_blank" rel="noopener">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21.9 4.3 18.7 19.4c-.2 1-.9 1.3-1.7.8l-4.8-3.5-2.3 2.2c-.3.3-.5.5-1 .5l.3-4.9 8.9-8c.4-.3-.1-.5-.6-.2l-11 6.9-4.7-1.5c-1-.3-1-1 .2-1.5L20.6 3c.9-.3 1.6.2 1.3 1.3z"/></svg>
+      Открыть бота @labkit_ru_bot
+    </a>
+    <small>Попробовать можно бесплатно</small>
+  </section>
+
+  <section aria-labelledby="h-more" style="display:flex;flex-direction:column;gap:10px">
+    <h2 id="h-more">Другие калькуляторы</h2>
+    <div class="list">
+      <a class="item" href="../modul-krupnosti-peska/"><span class="ico" style="background:#c48a2c" aria-hidden="true">Мк</span><span class="tx"><b>Модуль крупности песка</b><span>ГОСТ 8735 и 8736: остатки на ситах, Мк, группа песка</span></span></a>
+      <a class="item" href="../zernovoy-sostav-shchebnya/"><span class="ico" style="background:#6b7480" aria-hidden="true">Щ</span><span class="tx"><b>Зерновой состав щебня</b><span>ГОСТ 32703 с изм. 1 и 2: проход через сита, марка 90/10, 85/15</span></span></a>
+      <a class="item" href="../prochnost-betona/"><span class="ico" style="background:#8a8f98" aria-hidden="true">B</span><span class="tx"><b>Прочность бетона по образцам</b><span>ГОСТ 10180 и ГОСТ 18105, схема Г</span></span></a>
+    </div>
+  </section>
+
+  <section class="card how" aria-labelledby="h-how">
+<h2 id="h-how">Как определяют пустоты в кернах асфальтобетона</h2>
+    <ol>
+      <li>Объёмная плотность керна по ГОСТ Р 58401.10: Gmb = A / (B − C) × 0,997, где A — масса сухого керна, B — масса после насыщения водой с протёртой поверхностью, C — масса в воде.</li>
+      <li>Если водопоглощение (B − A) / (B − C) больше 2 %, этот метод не подходит — плотность определяют с парафином по ГОСТ Р 58401.20.</li>
+      <li>Пустоты: Pa = (1 − Gmb / Gmm) × 100 %, где Gmm — максимальная плотность смеси из приёмо-сдаточных испытаний или рецепта.</li>
+      <li>Нормы по ГОСТ Р 58406.2 и 58406.1 зависят от слоя и типа смеси: для каждого места отдельно и для среднего, если мест 3 и больше.</li>
+    </ol>
+    <p>Керны отбирают в 1–3 местах на каждые 3000 м² покрытия. В Telegram-боте LabKit учитывается и толщина слоя, а результат сразу оформляется протоколом в Word.</p>
+  </section>
+
+  <footer>Расчёт ориентировочный. Для официального протокола сверяйтесь с действующими редакциями ГОСТ.</footer>
+</main>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const num = s => { const t = String(s ?? "").trim().replace(",", "."); if (t === "") return null; const v = Number(t); return Number.isFinite(v) ? v : null; };
+function okr(x, n = 1) { const sign = x < 0 ? -1 : 1; const v = Math.abs(parseFloat(x.toFixed(9))); return sign * Number(Math.round(Number(v + "e" + n)) + "e-" + n); }
+const f = (x, n = 1) => x == null || !Number.isFinite(x) ? "—" : okr(x, n).toFixed(n).replace(".", ",");
+const kr = x => x == null ? "—" : String(parseFloat(x.toFixed(3))).replace(".", ",");
+const mean = a => { a = a.filter(x => x != null); return a.length ? a.reduce((p, c) => p + c, 0) / a.length : null; };
+function oc(v, mn, mx, n = 1) { if (v == null || (mn == null && mx == null)) return ""; const z = okr(v, n); return (mn == null || z >= mn) && (mx == null || z <= mx) ? "+" : "−"; }
+function normText(mn, mx) {
+  if (mn == null && mx == null) return "—";
+  if (mn != null && mx != null) return mn === mx ? kr(mn) : kr(mn) + "–" + kr(mx);
+  return mx != null ? "до " + kr(mx) : "от " + kr(mn);
+}
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+function markBad() { document.querySelectorAll("input[inputmode=decimal]").forEach(el => el.classList.toggle("bad", el.value.trim() !== "" && num(el.value) == null)); }
+function setPill(el, text, state) { el.textContent = text; el.className = "pill" + (state === true ? " ok" : state === false ? " bad" : ""); }
+
+const RHO_W = 0.997;
+// t — пустоты при 3 местах и более (по типу смеси), s — единичные измерения (1–2 места); третий элемент — верх для тротуаров
+const KR_L = {
+  osn: { name: "Слой основания", gost: "ГОСТ Р 58406.2-2020", s: [2.0, 8.0], types: Object.fromEntries(["А32ОТ", "А22ОТ", "А16ОТ", "А32ОН", "А22ОН", "А16ОН", "А32ОЛ", "А22ОЛ", "А16ОЛ"].map(k => [k, { t: [3.0, 8.0] }])) },
+  niz: { name: "Нижний слой покрытия", gost: "ГОСТ Р 58406.2-2020", s: [1.0, 7.0, 8.0], types: Object.fromEntries([...["А32НТ", "А22НТ", "А16НТ", "А32НН", "А22НН", "А16НН", "А11НН", "А22НЛ", "А16НЛ", "А11НЛ"].map(k => [k, { t: [2.0, 7.0] }]), ["А8НЛ", { t: [2.0, 8.0] }], ["А5НЛ", { t: [2.0, 8.0] }]]) },
+  verh: { name: "Верхний слой покрытия", gost: "ГОСТ Р 58406.2-2020", s: [1.0, 6.0, 8.0], types: Object.fromEntries([...["А22ВТ", "А16ВТ", "А11ВТ", "А22ВН", "А16ВН", "А11ВН", "А8ВН"].map(k => [k, { t: [2.0, 6.0] }]), ["А16ВЛ", { t: [1.5, 6.0] }], ["А11ВЛ", { t: [1.5, 6.0] }], ["А8ВЛ", { t: [1.5, 6.0, 8.0] }], ["А5ВЛ", { t: [1.5, 6.0, 8.0] }]]) },
+  shma: { name: "ЩМА (верхний слой)", gost: "ГОСТ Р 58406.1-2020", types: { "ЩМА-22": { t: [2.0, 6.0], s: [1.0, 6.0] }, "ЩМА-16": { t: [2.0, 6.0], s: [1.0, 6.0] }, "ЩМА-11": { t: [2.0, 5.5], s: [1.0, 5.5] }, "ЩМА-8": { t: [1.5, 5.5], s: [1.0, 5.5] } } },
+};
+function norms() {
+  const L = KR_L[$("sloy").value], ty = L.types[$("tip").value] || Object.values(L.types)[0], tro = L !== KR_L.osn && $("tro").value === "1";
+  const s = ty.s || L.s, t = ty.t;
+  return { L, s: [s[0], tro && s[2] ? s[2] : s[1]], t: [t[0], tro && t[2] ? t[2] : t[1]] };
+}
+$("sloy").innerHTML = Object.entries(KR_L).map(([k, v]) => `<option value="${k}">${v.name}</option>`).join("");
+function fillTypes() { $("tip").innerHTML = Object.keys(KR_L[$("sloy").value].types).map(k => `<option>${k}</option>`).join(""); }
+const EX = { sloy: "verh", tip: "А16ВН", gmm: "2,540", tro: "0", P: [
+  { n: "ПК 1+20, ось", k: [["1012,4", "1015,0", "594,2"]] }, { n: "ПК 2+40, правая", k: [["998,6", "1001,2", "586,9"]] }, { n: "ПК 3+60, левая", k: [["1005,1", "1007,9", "591,0"]] }] };
+let P = [];
+function renderPlaces() {
+  $("places").innerHTML = P.map((pl, pi) => `<div class="block"><div class="block-h"><b>Место ${pi + 1}</b>
+      <span><button type="button" class="btn ghost" data-a="add-k" data-p="${pi}"${pl.k.length >= 4 ? " hidden" : ""}>+ керн</button>
+      ${P.length > 1 ? `<button type="button" class="btn x" data-a="del-p" data-p="${pi}" aria-label="Удалить место ${pi + 1}">✕</button>` : ""}</span></div>
+    <label class="fld"><span>Место отбора (ПК, полоса)</span><input type="text" autocomplete="off" data-p="${pi}" data-n="1" value="${esc(pl.n)}"></label>
+    ${pl.k.map((k, ki) => `<div class="trio">${["A", "B", "C"].map((l, j) => `<label class="fld"><span>Керн ${ki + 1}: ${l}, г</span><input inputmode="decimal" autocomplete="off" data-p="${pi}" data-k="${ki}" data-j="${j}" value="${esc(k[j])}"></label>`).join("")}</div>
+      <p class="sub" id="k${pi}_${ki}">—</p>`).join("")}
+    <p class="sub" id="m${pi}">—</p></div>`).join("");
+  calc();
+}
+function fill(ex) {
+  if (ex) { $("sloy").value = EX.sloy; fillTypes(); $("tip").value = EX.tip; $("gmm").value = EX.gmm; $("tro").value = EX.tro; }
+  P = ex ? EX.P.map(p => ({ n: p.n, k: p.k.map(k => [...k]) })) : [{ n: "", k: [["", "", ""]] }];
+  if (!ex) $("gmm").value = "";
+  $("ex-note").hidden = !ex;
+  renderPlaces();
+}
+function calc() {
+  markBad();
+  const N = norms(), gmm = num($("gmm").value), warn = [];
+  $("tro-wrap").hidden = $("sloy").value === "osn";
+  $("cfg-gost").textContent = N.L.gost;
+  $("cfg-info").textContent = `${N.L.name}, ${$("tip").value}: пустоты по каждому месту ${normText(N.s[0], N.s[1])} %; при 3 местах и больше среднее ${normText(N.t[0], N.t[1])} % (${N.L.gost}).`;
+  if (!(gmm > 0)) warn.push("Укажи максимальную плотность смеси Gmm — из приёмо-сдаточных испытаний смеси или рецепта.");
+  const places = P.map((pl, pi) => {
+    const gs = pl.k.map((k, ki) => {
+      const [a, b, c] = k.map(num), el = $(`k${pi}_${ki}`);
+      if (!(a > 0 && b > 0 && c != null && b > c)) { if (el) el.textContent = "—"; return null; }
+      const gmb = a / (b - c) * RHO_W, w = (b - a) / (b - c) * 100, pa = gmm > 0 ? (1 - okr(gmb, 3) / gmm) * 100 : null;
+      if (okr(w) > 2) warn.push(`Место ${pi + 1}, керн ${ki + 1}: водопоглощение ${f(w)} % больше 2 % — плотность нужно определять с парафином (ГОСТ Р 58401.20).`);
+      if (b < a) warn.push(`Место ${pi + 1}, керн ${ki + 1}: масса после воды меньше сухой — проверь взвешивание.`);
+      if (el) el.innerHTML = `Gmb <b>${f(gmb, 3)}</b> г/см³ · водопоглощение ${f(w)} % · пустоты ${f(pa)} %`;
+      return okr(gmb, 3);
+    }).filter(v => v != null);
+    const gmb = gs.length ? mean(gs) : null, pa = gmb != null && gmm > 0 ? (1 - okr(gmb, 3) / gmm) * 100 : null, v = oc(pa, N.s[0], N.s[1]);
+    const el = $("m" + pi);
+    if (el) el.innerHTML = pa == null ? "—" : `По месту: пустоты <b class="${v === "+" ? "v-plus" : "v-minus"}">${f(pa)} %</b> (норма ${normText(N.s[0], N.s[1])} %)`;
+    return { pa, v };
+  }).filter(m => m.pa != null);
+  const note = $("r-note"); note.className = warn.length ? "note warn" : "note"; note.textContent = warn.join(" ");
+  if (!places.length) { $("pa").textContent = "—"; setPill($("verdict"), "Заполни массы кернов и Gmm"); $("r-rule").textContent = ""; return; }
+  const each = places.every(m => m.v === "+");
+  if (places.length >= 3) {
+    const pa = mean(places.map(m => okr(m.pa, 1))), vm = oc(pa, N.t[0], N.t[1]), ok = vm === "+" && each;
+    $("pa").textContent = f(pa);
+    $("r-rule").textContent = `Среднее по ${places.length} местам ${f(pa)} % (норма ${normText(N.t[0], N.t[1])} %); каждое место в пределах ${normText(N.s[0], N.s[1])} %: ${each ? "да" : "нет"}`;
+    setPill($("verdict"), ok ? "Уплотнение соответствует" : "Уплотнение НЕ соответствует", ok);
+  } else {
+    $("pa").textContent = f(mean(places.map(m => m.pa)));
+    $("r-rule").textContent = `Единичные измерения (${places.length} ${places.length === 1 ? "место" : "места"}): норма ${normText(N.s[0], N.s[1])} % для каждого`;
+    setPill($("verdict"), each ? "Уплотнение соответствует" : "Уплотнение НЕ соответствует", each);
+  }
+}
+document.addEventListener("input", e => {
+  const t = e.target; if (t.tagName !== "INPUT") return;
+  if (t.dataset.n) P[+t.dataset.p].n = t.value;
+  else if (t.dataset.j != null) P[+t.dataset.p].k[+t.dataset.k][+t.dataset.j] = t.value;
+  $("ex-note").hidden = true; calc();
+});
+$("sloy").addEventListener("change", () => { fillTypes(); calc(); });
+["tip", "tro"].forEach(id => $(id).addEventListener("change", calc));
+$("places").addEventListener("click", e => {
+  const b = e.target.closest("[data-a]"); if (!b) return;
+  const pi = +b.dataset.p;
+  if (b.dataset.a === "add-k") P[pi].k.push(["", "", ""]); else if (b.dataset.a === "del-p") P.splice(pi, 1);
+  renderPlaces();
+});
+$("b-add").addEventListener("click", () => { P.push({ n: "", k: [["", "", ""]] }); renderPlaces(); });
+$("b-clear").addEventListener("click", () => fill(false));
+$("b-ex").addEventListener("click", () => fill(true));
+fill(true);
+</script>
+</body>
+</html>

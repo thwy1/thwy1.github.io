@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Зерновой состав щебня онлайн — расчёт по ГОСТ 32703 | LabKit</title>
+<meta name="description" content="Бесплатный расчёт зернового состава щебня по ГОСТ 32703-2014 с изменениями 1 и 2: частные остатки, проход через сита, проверка марки 90/10, 85/15 и др.">
+<link rel="canonical" href="https://thwy1.github.io/zernovoy-sostav-shchebnya/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Зерновой состав щебня онлайн">
+<meta property="og:description" content="Бесплатный расчёт зернового состава щебня по ГОСТ 32703-2014 с изменениями 1 и 2: частные остатки, проход через сита, проверка марки 90/10, 85/15 и др.">
+<meta property="og:url" content="https://thwy1.github.io/zernovoy-sostav-shchebnya/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23007aff'/%3E%3Ctext x='16' y='22' font-family='Arial' font-weight='700' font-size='17' fill='white' text-anchor='middle'%3EL%3C/text%3E%3C/svg%3E">
+<style>
+/* Layout: one calm column like an iOS app screen — title, sieve card with live residues, result card, bot CTA, other calculators, short how-to for search. Same look as the LabKit mini-app. */
+:root {
+  --bg: #f2f2f7;
+  --surface: #ffffff;
+  --input: rgba(118, 118, 128, .12);
+  --fg: #1c1c1e;
+  --muted: #6e6e73;
+  --line: rgba(60, 60, 67, .18);
+  --accent: #007aff;
+  --accent-soft: rgba(0, 122, 255, .1);
+  --accent-ring: rgba(0, 122, 255, .22);
+  --accent-fg: #ffffff;
+  --ok: #248a3d;
+  --ok-soft: rgba(52, 199, 89, .14);
+  --bad: #d70015;
+  --bad-soft: rgba(255, 59, 48, .1);
+  --tg: #229ed9;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --ease: cubic-bezier(.32, .72, 0, 1);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #000000; --surface: #1c1c1e; --input: rgba(118, 118, 128, .24); --fg: #f5f5f7; --muted: #98989f; --line: rgba(84, 84, 88, .65);
+    --accent: #0a84ff; --accent-soft: rgba(10, 132, 255, .18); --accent-ring: rgba(10, 132, 255, .35);
+    --ok: #30d158; --ok-soft: rgba(48, 209, 88, .16); --bad: #ff453a; --bad-soft: rgba(255, 69, 58, .16); --tg: #2aabee; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #000000; --surface: #1c1c1e; --input: rgba(118, 118, 128, .24); --fg: #f5f5f7; --muted: #98989f; --line: rgba(84, 84, 88, .65);
+  --accent: #0a84ff; --accent-soft: rgba(10, 132, 255, .18); --accent-ring: rgba(10, 132, 255, .35);
+  --ok: #30d158; --ok-soft: rgba(48, 209, 88, .16); --bad: #ff453a; --bad-soft: rgba(255, 69, 58, .16); --tg: #2aabee; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.45 var(--font-body); letter-spacing: -.01em;
+  -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: calc(28px + env(safe-area-inset-top, 0px)) calc(48px + env(safe-area-inset-bottom, 0px));
+}
+.page { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.brand { text-decoration: none; display: flex; align-items: center; gap: 8px; font: 600 .9rem var(--font-body); color: var(--muted); }
+.brand i { width: 22px; height: 22px; border-radius: 6px; background: var(--accent); display: grid; place-items: center; color: #fff; font-style: normal; font-size: .75rem; font-weight: 700; }
+h1 { font: 700 clamp(1.9rem, 6vw, 2.4rem)/1.08 var(--font-display); letter-spacing: -.03em; margin: 4px 0 0; text-wrap: balance; }
+.lead { margin: 0; color: var(--muted); max-width: 52ch; }
+h2 { font: 600 1.15rem/1.25 var(--font-display); letter-spacing: -.02em; margin: 0; }
+.card { background: var(--surface); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.card-h { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.tag { font-size: .75rem; color: var(--muted); }
+.mass { display: flex; align-items: center; gap: 12px; }
+.mass label { flex: 1; color: var(--muted); font-size: .92rem; }
+input {
+  font: 600 1.05rem var(--font-body); font-variant-numeric: tabular-nums; color: var(--fg); background: var(--input);
+  border: 1px solid transparent; border-radius: 10px; padding: 9px 10px; width: 100%; min-width: 0; text-align: right;
+  -webkit-appearance: none; appearance: none; transition: border-color .2s, box-shadow .2s, background-color .2s;
+}
+input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-ring); }
+input.bad { border-color: var(--bad); background: var(--bad-soft); }
+.mass input { width: 7.5rem; flex: none; }
+.tbl { display: grid; grid-template-columns: minmax(3.6rem, auto) minmax(5rem, 1fr) 4.2rem 4.2rem; gap: 8px 10px; align-items: center; font-variant-numeric: tabular-nums; }
+.tbl .h { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+.tbl .h.r, .tbl output { text-align: right; }
+.tbl .s { font-weight: 600; }
+.tbl output { font-size: .98rem; }
+.tbl output.full { font-weight: 600; }
+.sep { grid-column: 1 / -1; height: .5px; background: var(--line); }
+.row-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn {
+  font: 600 .92rem var(--font-body); border: 0; border-radius: 10px; padding: 9px 14px; cursor: pointer;
+  background: var(--input); color: var(--accent); transition: transform .12s ease-out, opacity .15s;
+}
+.btn:active { transform: scale(.96); }
+.btn:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.result { gap: 10px; }
+.mk { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.mk-num { font: 700 3.4rem/1 var(--font-display); letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.mk-cap { color: var(--muted); font-size: .92rem; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; font: 600 .92rem var(--font-body); background: var(--input); }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.fact { background: var(--input); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+.fact span { font-size: .78rem; color: var(--muted); }
+.fact b { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.note { font-size: .88rem; color: var(--muted); margin: 0; }
+.note.warn { color: var(--bad); }
+.formula { font-size: .9rem; color: var(--muted); margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+.cta { background: var(--fg); color: var(--bg); }
+.cta h2 { font-size: 1.3rem; }
+.cta ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.cta li { display: flex; gap: 10px; align-items: baseline; opacity: .9; }
+.cta li::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--tg); transform: translateY(-2px); }
+.tg-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; border-radius: 14px; padding: 14px 18px;
+  background: var(--tg); color: #fff; font: 600 1.05rem var(--font-body); transition: transform .12s ease-out, opacity .15s;
+}
+.tg-btn:active { transform: scale(.97); opacity: .9; }
+.cta small { opacity: .65; text-align: center; }
+
+.list { background: var(--surface); border-radius: 16px; overflow: hidden; }
+.item { display: flex; align-items: center; gap: 12px; padding: 13px 16px; }
+.item + .item { box-shadow: inset 0 .5px 0 var(--line); }
+.item .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.item .tx b { font-weight: 600; }
+.item .tx span { font-size: .85rem; color: var(--muted); }
+.soon { font-size: .78rem; color: var(--muted); background: var(--input); border-radius: 999px; padding: 3px 9px; flex: none; }
+.how { display: flex; flex-direction: column; gap: 10px; }
+.how ol { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 6px; }
+.how p { margin: 0; }
+footer { color: var(--muted); font-size: .8rem; text-align: center; }
+@media (prefers-reduced-motion: reduce) { *, *::before { transition-duration: .01ms !important; } }
+
+/* добавки для калькуляторов щебня, бетона и кернов (поверх стилей страницы Мк) */
+[hidden] { display: none !important; }
+a.item { color: inherit; text-decoration: none; transition: background-color .2s; }
+a.item:active { background: var(--input); }
+a.item::after { content: ""; flex: none; width: 8px; height: 8px; border: solid var(--muted); border-width: 2px 2px 0 0; transform: rotate(45deg); opacity: .55; margin-right: 4px; }
+.item .ico { flex: none; width: 36px; height: 36px; border-radius: 9px; display: grid; place-items: center; color: #fff; font: 700 .8rem var(--font-body); }
+.fld-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.fld { display: flex; flex-direction: column; justify-content: flex-end; gap: 5px; min-width: 0; }
+.fld > span { font-size: .8rem; color: var(--muted); padding-left: 2px; }
+.fld input { text-align: left; }
+select {
+  width: 100%; min-width: 0; font: 600 1rem var(--font-body); color: var(--fg); background-color: var(--input);
+  border: 1px solid transparent; border-radius: 10px; padding: 9px 30px 9px 10px; -webkit-appearance: none; appearance: none; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5l3 3 3-3' fill='none' stroke='%238e8e93' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center;
+}
+select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-ring); }
+select option, select optgroup { background-color: var(--surface); color: var(--fg); }
+.info { font-size: .9rem; color: var(--muted); background: var(--input); border-radius: 12px; padding: 10px 12px; margin: 0; }
+.tbl5 { display: grid; grid-template-columns: 2.8rem minmax(4rem, 1fr) 3rem 3.4rem 3.8rem; gap: 8px 6px; align-items: center; font-variant-numeric: tabular-nums; }
+.tbl5 .h { font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .02em; }
+.tbl5 .h.r, .tbl5 output { text-align: right; }
+.tbl5 output { font-size: .92rem; }
+.tbl5 .s { font-weight: 600; }
+.tbl5 .nrm { font-size: .8rem; color: var(--muted); }
+.v-plus { color: var(--ok); font-weight: 600; }
+.v-minus { color: var(--bad); font-weight: 600; }
+.block { border-top: .5px solid var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+.block-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.block-h b { font-weight: 600; }
+.trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.trio .fld > span { font-size: .74rem; }
+.sub { font-size: .9rem; color: var(--muted); margin: 0; font-variant-numeric: tabular-nums; }
+.sub b { color: var(--fg); }
+.btn.x { color: var(--bad); background: transparent; padding: 6px 8px; }
+.btn.ghost { background: var(--accent-soft); color: var(--accent); }
+</style>
+<!-- Yandex.Metrika counter -->
+<script>
+(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r){return;}}k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,'script','https://mc.yandex.ru/metrika/tag.js?id=114173330','ym');
+ym(114173330,'init',{ssr:true,webvisor:true,clickmap:true,accurateTrackBounce:true,trackLinks:true});
+document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[href*="t.me/labkit_ru_bot"]');if(a){ym(114173330,'reachGoal','bot_click');}});
+</script>
+<noscript><div><img src="https://mc.yandex.ru/watch/114173330" style="position:absolute;left:-9999px" alt=""></div></noscript>
+<!-- /Yandex.Metrika counter -->
+</head>
+<body>
+<main class="page">
+  <div>
+    <a class="brand" href="../"><i aria-hidden="true">L</i>LabKit · все калькуляторы</a>
+    <h1>Зерновой состав щебня</h1>
+  </div>
+  <p class="lead">Выбери фракцию и марку, вбей массу пробы и остатки на ситах. Проход через каждое сито и соответствие ГОСТ 32703 считаются сразу. Бесплатно и без регистрации.</p>
+
+  <section class="card" aria-labelledby="h-cfg">
+    <div class="card-h"><h2 id="h-cfg">Фракция и марка</h2><span class="tag">ГОСТ 32703-2014, изм. 1 и 2</span></div>
+    <div class="fld-grid">
+      <label class="fld"><span>Фракция, мм</span><select id="frak"></select></label>
+      <label class="fld"><span>Марка по зерновому составу</span><select id="zs"></select></label>
+    </div>
+    <p class="info" id="cfg-info">—</p>
+  </section>
+
+  <section class="card" aria-labelledby="h-sieve">
+    <div class="card-h"><h2 id="h-sieve">Рассев на ситах</h2><span class="tag">ГОСТ 33029</span></div>
+    <div class="mass"><label for="m">Масса пробы, г</label><input id="m" inputmode="decimal" autocomplete="off" value="2000"></div>
+    <div class="tbl5" id="tbl"></div>
+    <div class="row-btns">
+      <button type="button" class="btn" id="b-clear">Очистить</button>
+      <button type="button" class="btn" id="b-ex">Вернуть пример</button>
+    </div>
+    <p class="note" id="ex-note">В полях стоит пример. Замени цифры на свои.</p>
+  </section>
+
+  <section class="card result" aria-labelledby="h-res" aria-live="polite">
+    <div class="card-h"><h2 id="h-res">Результат</h2><span class="tag">ГОСТ 32703, табл. 1</span></div>
+    <div><span class="pill" id="verdict">Заполни рассев</span></div>
+    <div class="facts">
+      <div class="fact"><span>Фракция</span><b id="r-frak">—</b></div>
+      <div class="fact"><span>Сит вне нормы</span><b id="r-bad">—</b></div>
+      <div class="fact"><span>Потери при рассеве</span><b id="r-lost">—</b></div>
+    </div>
+    <p class="note" id="r-note"></p>
+  </section>
+
+  <section class="card cta" aria-labelledby="h-cta">
+    <h2 id="h-cta">Нужен готовый протокол в Word?</h2>
+    <ul>
+      <li>Песок, щебень, отсев, ЩПС, бетон и керны асфальта в одном месте</li>
+      <li>Нормы по ГОСТ подставляются сами, видно «соответствует / нет»</li>
+      <li>Протокол с шапкой, номером и подписью приходит в чат за секунду</li>
+      <li>Черновики не теряются, можно продолжить с телефона</li>
+    </ul>
+    <a class="tg-btn" href="https://t.me/labkit_ru_bot" target="_blank" rel="noopener">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21.9 4.3 18.7 19.4c-.2 1-.9 1.3-1.7.8l-4.8-3.5-2.3 2.2c-.3.3-.5.5-1 .5l.3-4.9 8.9-8c.4-.3-.1-.5-.6-.2l-11 6.9-4.7-1.5c-1-.3-1-1 .2-1.5L20.6 3c.9-.3 1.6.2 1.3 1.3z"/></svg>
+      Открыть бота @labkit_ru_bot
+    </a>
+    <small>Попробовать можно бесплатно</small>
+  </section>
+
+  <section aria-labelledby="h-more" style="display:flex;flex-direction:column;gap:10px">
+    <h2 id="h-more">Другие калькуляторы</h2>
+    <div class="list">
+      <a class="item" href="../modul-krupnosti-peska/"><span class="ico" style="background:#c48a2c" aria-hidden="true">Мк</span><span class="tx"><b>Модуль крупности песка</b><span>ГОСТ 8735 и 8736: остатки на ситах, Мк, группа песка</span></span></a>
+      <a class="item" href="../prochnost-betona/"><span class="ico" style="background:#8a8f98" aria-hidden="true">B</span><span class="tx"><b>Прочность бетона по образцам</b><span>ГОСТ 10180 и ГОСТ 18105, схема Г</span></span></a>
+      <a class="item" href="../pustoty-v-kernah/"><span class="ico" style="background:#3a3a3c" aria-hidden="true">А</span><span class="tx"><b>Пустоты в кернах асфальтобетона</b><span>ГОСТ Р 58401.10 и ГОСТ Р 58406</span></span></a>
+    </div>
+  </section>
+
+  <section class="card how" aria-labelledby="h-how">
+<h2 id="h-how">Как определяют зерновой состав щебня</h2>
+    <ol>
+      <li>Пробу щебня взвешивают и просеивают через сита, которые зависят от фракции: 2D, 1,4D, D, d и d/2 (для широких фракций и смесей — ещё D/1,4 или D/2).</li>
+      <li>Частный остаток — масса на сите, делённая на массу пробы, × 100 %.</li>
+      <li>Проход через сито — 100 % минус сумма частных остатков на этом и всех более крупных ситах.</li>
+      <li>Проход сравнивают с нормами ГОСТ 32703 для выбранной марки по зерновому составу: например, у марки 90/10 через D проходит не менее 90 %, через d — не более 10 %.</li>
+    </ol>
+    <p>Если потери при рассеве больше 1 %, взвешивание лучше повторить. Калькулятор учитывает изменения № 1 и № 2 к ГОСТ 32703-2014.</p>
+  </section>
+
+  <footer>Расчёт ориентировочный. Для официального протокола сверяйтесь с действующими редакциями ГОСТ.</footer>
+</main>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const num = s => { const t = String(s ?? "").trim().replace(",", "."); if (t === "") return null; const v = Number(t); return Number.isFinite(v) ? v : null; };
+function okr(x, n = 1) { const sign = x < 0 ? -1 : 1; const v = Math.abs(parseFloat(x.toFixed(9))); return sign * Number(Math.round(Number(v + "e" + n)) + "e-" + n); }
+const f = (x, n = 1) => x == null || !Number.isFinite(x) ? "—" : okr(x, n).toFixed(n).replace(".", ",");
+const kr = x => x == null ? "—" : String(parseFloat(x.toFixed(3))).replace(".", ",");
+const mean = a => { a = a.filter(x => x != null); return a.length ? a.reduce((p, c) => p + c, 0) / a.length : null; };
+function oc(v, mn, mx, n = 1) { if (v == null || (mn == null && mx == null)) return ""; const z = okr(v, n); return (mn == null || z >= mn) && (mx == null || z <= mx) ? "+" : "−"; }
+function normText(mn, mx) {
+  if (mn == null && mx == null) return "—";
+  if (mn != null && mx != null) return mn === mx ? kr(mn) : kr(mn) + "–" + kr(mx);
+  return mx != null ? "до " + kr(mx) : "от " + kr(mn);
+}
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+function markBad() { document.querySelectorAll("input[inputmode=decimal]").forEach(el => el.classList.toggle("bad", el.value.trim() !== "" && num(el.value) == null)); }
+function setPill(el, text, state) { el.textContent = text; el.className = "pill" + (state === true ? " ok" : state === false ? " bad" : ""); }
+
+const MAIN = [[4, 5.6], [5.6, 8], [8, 11.2], [11.2, 16], [16, 22.4], [22.4, 31.5], [31.5, 45], [45, 63], [63, 90]];
+const WIDE = [[4, 8], [5.6, 11.2], [8, 16], [11.2, 22.4], [16, 31.5], [22.4, 45], [31.5, 63], [45, 90]];
+const MIX = [[4, 16], [4, 22.4], [4, 31.5], [4, 45], [4, 63], [4, 90], [5.6, 22.4], [5.6, 31.5], [5.6, 45], [5.6, 63], [5.6, 90],
+  [8, 31.5], [8, 45], [8, 63], [8, 90], [11.2, 45], [11.2, 63], [11.2, 90], [16, 63], [16, 90], [22.4, 90]];
+const SIEVE_SET = [0.063, 0.125, 0.25, 0.5, 1, 2, 4, 5.6, 8, 11.2, 16, 22.4, 31.5, 45, 63, 90, 125];
+// марка по зерновому составу: [проход 1,4D от, проход D от, проход d до, проход d/2 до] (табл. 1)
+const ZS = { "90/10": [100, 90, 10, 2], "90/15": [98, 90, 15, 5], "90/20": [98, 90, 20, 5], "85/15": [98, 85, 15, 5], "85/20": [98, 85, 20, 5], "85/35": [98, 85, 35, 5] };
+const TYPE_TXT = { main: "основная фракция", wide: "широкая фракция", mix: "смесь фракций" };
+const key = s => String(Math.round(s * 1000) / 1000);
+function snap(x) { if (x > 150) return Math.round(x * 10) / 10; return SIEVE_SET.reduce((b, s) => Math.abs(Math.log(s / x)) < Math.abs(Math.log(b / x)) ? s : b); }
+function fracType(d, D) { const is = L => L.some(([a, b]) => a === d && b === D); return is(MAIN) ? "main" : is(WIDE) ? "wide" : "mix"; }
+function normsFor(d, D, zs) {
+  const z = ZS[zs], t = fracType(d, D), rows = [[2 * D, 100, 100], [1.4 * D, z[0], 100], [D, z[1], 100]];
+  if (t === "wide") rows.push([D / 1.4, 25, 80]);
+  if (t === "mix") rows.push([D / 2, 20, 70]);
+  rows.push([d, 0, z[2]], [d / 2, 0, z[3]]);
+  const m = new Map();
+  for (const [x, mn, mx] of rows) {
+    const s = snap(x), k = key(s);
+    if (m.has(k)) { const o = m.get(k); o.mn = Math.max(o.mn, mn); o.mx = Math.min(o.mx, mx); } else m.set(k, { s, mn, mx });
+  }
+  return { t, rows: [...m.values()].sort((a, b) => b.s - a.s) };
+}
+const EX = { frak: "4|8", zs: "90/10", m: "2000", o: { "16": "0", "11.2": "0", "8": "40", "5.6": "1200", "4": "700", "2": "30" }, dno: "28" };
+const vals = {};  // остатки по ситам, переживают смену фракции
+let N;
+$("frak").innerHTML = [["Основные", MAIN], ["Широкие", WIDE], ["Смеси фракций", MIX]].map(([g, L]) =>
+  `<optgroup label="${g}">` + L.map(([d, D]) => `<option value="${d}|${D}">${kr(d)}–${kr(D)}</option>`).join("") + "</optgroup>").join("");
+$("zs").innerHTML = Object.keys(ZS).map(k => `<option>${k}</option>`).join("");
+
+function build() {
+  const [d, D] = $("frak").value.split("|").map(Number);
+  N = normsFor(d, D, $("zs").value);
+  $("tbl").innerHTML = '<div class="h">Сито</div><div class="h r">Остаток, г</div><div class="h r">Част., %</div><div class="h r">Проход, %</div><div class="h r">Норма</div>' +
+    N.rows.map((r, i) => `<div class="s">${kr(r.s)}</div><input id="o${i}" data-k="${key(r.s)}" inputmode="decimal" autocomplete="off" aria-label="Остаток на сите ${kr(r.s)} мм, г" value="${esc(vals[key(r.s)] ?? "")}"><output id="a${i}"></output><output id="p${i}"></output><span class="nrm" style="text-align:right">${normText(r.mn, r.mx)}</span>`).join("") +
+    `<div class="sep"></div><div class="s">дно</div><input id="dno" inputmode="decimal" autocomplete="off" aria-label="Остаток на дне, г" value="${esc(vals.dno ?? "")}"><output id="adno"></output><span></span><span></span>`;
+  const z = ZS[$("zs").value];
+  $("cfg-info").textContent = `${kr(d)}–${kr(D)} мм — ${TYPE_TXT[N.t]}. Нормы прохода: через D не менее ${z[1]} %, через d не более ${z[2]} %, через d/2 не более ${z[3]} %` +
+    (N.t === "wide" ? ", через D/1,4 от 25 до 80 %." : N.t === "mix" ? ", через D/2 от 20 до 70 %." : ".");
+  calc();
+}
+function fill(ex) {
+  for (const k in vals) delete vals[k];
+  if (ex) { $("frak").value = EX.frak; $("zs").value = EX.zs; Object.assign(vals, EX.o, { dno: EX.dno }); }
+  $("m").value = ex ? EX.m : "";
+  $("ex-note").hidden = !ex;
+  build();
+}
+function calc() {
+  markBad();
+  const m = num($("m").value);
+  let acc = 0, all = m > 0, bad = 0, any = false, sum = 0;
+  N.rows.forEach((r, i) => {
+    const v = num($("o" + i).value);
+    if (v == null) all = false; else sum += v;
+    const a = m > 0 && v != null ? v / m * 100 : null;
+    if (a != null) acc += a;
+    const pp = all ? 100 - acc : null, ok = oc(pp, r.mn, r.mx);
+    $("a" + i).textContent = f(a);
+    const p = $("p" + i); p.textContent = pp == null ? "—" : f(pp); p.className = ok === "+" ? "v-plus" : ok === "−" ? "v-minus" : "";
+    if (ok) any = true;
+    if (ok === "−") bad++;
+  });
+  const dno = num($("dno").value);
+  $("adno").textContent = f(m > 0 && dno != null ? dno / m * 100 : null);
+  $("r-frak").textContent = $("frak").selectedOptions[0].textContent + " мм";
+  const note = $("r-note"); note.className = "note"; note.textContent = "";
+  if (!all || !any) { setPill($("verdict"), m > 0 ? "Заполни все сита" : "Укажи массу пробы"); $("r-bad").textContent = "—"; $("r-lost").textContent = "—"; return; }
+  $("r-bad").textContent = bad ? `${bad} из ${N.rows.length}` : "нет";
+  if (dno != null) {
+    const lost = (m - sum - dno) / m * 100;
+    $("r-lost").textContent = f(lost, 2) + " %";
+    if (Math.abs(lost) > 1) { note.className = "note warn"; note.textContent = `Сумма остатков отличается от массы пробы на ${f(Math.abs(lost))} %. Проверь взвешивания.`; }
+  } else $("r-lost").textContent = "—";
+  setPill($("verdict"), bad ? "Зерновой состав НЕ соответствует" : `Соответствует марке ${$("zs").value}`, !bad);
+}
+document.addEventListener("input", e => { if (e.target.dataset.k) vals[e.target.dataset.k] = e.target.value; if (e.target.id === "dno") vals.dno = e.target.value; if (e.target.tagName === "INPUT") { $("ex-note").hidden = true; calc(); } });
+$("frak").addEventListener("change", () => { for (const k in vals) delete vals[k]; $("ex-note").hidden = true; build(); });
+$("zs").addEventListener("change", build);
+$("b-clear").addEventListener("click", () => { fill(false); $("m").focus(); });
+$("b-ex").addEventListener("click", () => fill(true));
+fill(true);
+</script>
+</body>
+</html>

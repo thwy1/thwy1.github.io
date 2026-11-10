@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Прочность бетона по образцам — расчёт по ГОСТ 10180 и 18105 | LabKit</title>
+<meta name="description" content="Бесплатный расчёт прочности бетона по разрушающей нагрузке: прочность образцов и серии по ГОСТ 10180, оценка класса по схеме Г ГОСТ 18105, коэффициент вариации.">
+<link rel="canonical" href="https://thwy1.github.io/prochnost-betona/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Прочность бетона по образцам онлайн">
+<meta property="og:description" content="Бесплатный расчёт прочности бетона по разрушающей нагрузке: прочность образцов и серии по ГОСТ 10180, оценка класса по схеме Г ГОСТ 18105, коэффициент вариации.">
+<meta property="og:url" content="https://thwy1.github.io/prochnost-betona/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23007aff'/%3E%3Ctext x='16' y='22' font-family='Arial' font-weight='700' font-size='17' fill='white' text-anchor='middle'%3EL%3C/text%3E%3C/svg%3E">
+<style>
+/* Layout: one calm column like an iOS app screen — title, sieve card with live residues, result card, bot CTA, other calculators, short how-to for search. Same look as the LabKit mini-app. */
+:root {
+  --bg: #f2f2f7;
+  --surface: #ffffff;
+  --input: rgba(118, 118, 128, .12);
+  --fg: #1c1c1e;
+  --muted: #6e6e73;
+  --line: rgba(60, 60, 67, .18);
+  --accent: #007aff;
+  --accent-soft: rgba(0, 122, 255, .1);
+  --accent-ring: rgba(0, 122, 255, .22);
+  --accent-fg: #ffffff;
+  --ok: #248a3d;
+  --ok-soft: rgba(52, 199, 89, .14);
+  --bad: #d70015;
+  --bad-soft: rgba(255, 59, 48, .1);
+  --tg: #229ed9;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --ease: cubic-bezier(.32, .72, 0, 1);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #000000; --surface: #1c1c1e; --input: rgba(118, 118, 128, .24); --fg: #f5f5f7; --muted: #98989f; --line: rgba(84, 84, 88, .65);
+    --accent: #0a84ff; --accent-soft: rgba(10, 132, 255, .18); --accent-ring: rgba(10, 132, 255, .35);
+    --ok: #30d158; --ok-soft: rgba(48, 209, 88, .16); --bad: #ff453a; --bad-soft: rgba(255, 69, 58, .16); --tg: #2aabee; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #000000; --surface: #1c1c1e; --input: rgba(118, 118, 128, .24); --fg: #f5f5f7; --muted: #98989f; --line: rgba(84, 84, 88, .65);
+  --accent: #0a84ff; --accent-soft: rgba(10, 132, 255, .18); --accent-ring: rgba(10, 132, 255, .35);
+  --ok: #30d158; --ok-soft: rgba(48, 209, 88, .16); --bad: #ff453a; --bad-soft: rgba(255, 69, 58, .16); --tg: #2aabee; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.45 var(--font-body); letter-spacing: -.01em;
+  -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: calc(28px + env(safe-area-inset-top, 0px)) calc(48px + env(safe-area-inset-bottom, 0px));
+}
+.page { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.brand { text-decoration: none; display: flex; align-items: center; gap: 8px; font: 600 .9rem var(--font-body); color: var(--muted); }
+.brand i { width: 22px; height: 22px; border-radius: 6px; background: var(--accent); display: grid; place-items: center; color: #fff; font-style: normal; font-size: .75rem; font-weight: 700; }
+h1 { font: 700 clamp(1.9rem, 6vw, 2.4rem)/1.08 var(--font-display); letter-spacing: -.03em; margin: 4px 0 0; text-wrap: balance; }
+.lead { margin: 0; color: var(--muted); max-width: 52ch; }
+h2 { font: 600 1.15rem/1.25 var(--font-display); letter-spacing: -.02em; margin: 0; }
+.card { background: var(--surface); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.card-h { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.tag { font-size: .75rem; color: var(--muted); }
+.mass { display: flex; align-items: center; gap: 12px; }
+.mass label { flex: 1; color: var(--muted); font-size: .92rem; }
+input {
+  font: 600 1.05rem var(--font-body); font-variant-numeric: tabular-nums; color: var(--fg); background: var(--input);
+  border: 1px solid transparent; border-radius: 10px; padding: 9px 10px; width: 100%; min-width: 0; text-align: right;
+  -webkit-appearance: none; appearance: none; transition: border-color .2s, box-shadow .2s, background-color .2s;
+}
+input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-ring); }
+input.bad { border-color: var(--bad); background: var(--bad-soft); }
+.mass input { width: 7.5rem; flex: none; }
+.tbl { display: grid; grid-template-columns: minmax(3.6rem, auto) minmax(5rem, 1fr) 4.2rem 4.2rem; gap: 8px 10px; align-items: center; font-variant-numeric: tabular-nums; }
+.tbl .h { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+.tbl .h.r, .tbl output { text-align: right; }
+.tbl .s { font-weight: 600; }
+.tbl output { font-size: .98rem; }
+.tbl output.full { font-weight: 600; }
+.sep { grid-column: 1 / -1; height: .5px; background: var(--line); }
+.row-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn {
+  font: 600 .92rem var(--font-body); border: 0; border-radius: 10px; padding: 9px 14px; cursor: pointer;
+  background: var(--input); color: var(--accent); transition: transform .12s ease-out, opacity .15s;
+}
+.btn:active { transform: scale(.96); }
+.btn:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.result { gap: 10px; }
+.mk { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.mk-num { font: 700 3.4rem/1 var(--font-display); letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.mk-cap { color: var(--muted); font-size: .92rem; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; font: 600 .92rem var(--font-body); background: var(--input); }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.fact { background: var(--input); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+.fact span { font-size: .78rem; color: var(--muted); }
+.fact b { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.note { font-size: .88rem; color: var(--muted); margin: 0; }
+.note.warn { color: var(--bad); }
+.formula { font-size: .9rem; color: var(--muted); margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+.cta { background: var(--fg); color: var(--bg); }
+.cta h2 { font-size: 1.3rem; }
+.cta ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.cta li { display: flex; gap: 10px; align-items: baseline; opacity: .9; }
+.cta li::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--tg); transform: translateY(-2px); }
+.tg-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; border-radius: 14px; padding: 14px 18px;
+  background: var(--tg); color: #fff; font: 600 1.05rem var(--font-body); transition: transform .12s ease-out, opacity .15s;
+}
+.tg-btn:active { transform: scale(.97); opacity: .9; }
+.cta small { opacity: .65; text-align: center; }
+
+.list { background: var(--surface); border-radius: 16px; overflow: hidden; }
+.item { display: flex; align-items: center; gap: 12px; padding: 13px 16px; }
+.item + .item { box-shadow: inset 0 .5px 0 var(--line); }
+.item .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.item .tx b { font-weight: 600; }
+.item .tx span { font-size: .85rem; color: var(--muted); }
+.soon { font-size: .78rem; color: var(--muted); background: var(--input); border-radius: 999px; padding: 3px 9px; flex: none; }
+.how { display: flex; flex-direction: column; gap: 10px; }
+.how ol { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 6px; }
+.how p { margin: 0; }
+footer { color: var(--muted); font-size: .8rem; text-align: center; }
+@media (prefers-reduced-motion: reduce) { *, *::before { transition-duration: .01ms !important; } }
+
+/* добавки для калькуляторов щебня, бетона и кернов (поверх стилей страницы Мк) */
+[hidden] { display: none !important; }
+a.item { color: inherit; text-decoration: none; transition: background-color .2s; }
+a.item:active { background: var(--input); }
+a.item::after { content: ""; flex: none; width: 8px; height: 8px; border: solid var(--muted); border-width: 2px 2px 0 0; transform: rotate(45deg); opacity: .55; margin-right: 4px; }
+.item .ico { flex: none; width: 36px; height: 36px; border-radius: 9px; display: grid; place-items: center; color: #fff; font: 700 .8rem var(--font-body); }
+.fld-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.fld { display: flex; flex-direction: column; justify-content: flex-end; gap: 5px; min-width: 0; }
+.fld > span { font-size: .8rem; color: var(--muted); padding-left: 2px; }
+.fld input { text-align: left; }
+select {
+  width: 100%; min-width: 0; font: 600 1rem var(--font-body); color: var(--fg); background-color: var(--input);
+  border: 1px solid transparent; border-radius: 10px; padding: 9px 30px 9px 10px; -webkit-appearance: none; appearance: none; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5l3 3 3-3' fill='none' stroke='%238e8e93' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center;
+}
+select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-ring); }
+select option, select optgroup { background-color: var(--surface); color: var(--fg); }
+.info { font-size: .9rem; color: var(--muted); background: var(--input); border-radius: 12px; padding: 10px 12px; margin: 0; }
+.tbl5 { display: grid; grid-template-columns: 2.8rem minmax(4rem, 1fr) 3rem 3.4rem 3.8rem; gap: 8px 6px; align-items: center; font-variant-numeric: tabular-nums; }
+.tbl5 .h { font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .02em; }
+.tbl5 .h.r, .tbl5 output { text-align: right; }
+.tbl5 output { font-size: .92rem; }
+.tbl5 .s { font-weight: 600; }
+.tbl5 .nrm { font-size: .8rem; color: var(--muted); }
+.v-plus { color: var(--ok); font-weight: 600; }
+.v-minus { color: var(--bad); font-weight: 600; }
+.block { border-top: .5px solid var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+.block-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.block-h b { font-weight: 600; }
+.trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.trio .fld > span { font-size: .74rem; }
+.sub { font-size: .9rem; color: var(--muted); margin: 0; font-variant-numeric: tabular-nums; }
+.sub b { color: var(--fg); }
+.btn.x { color: var(--bad); background: transparent; padding: 6px 8px; }
+.btn.ghost { background: var(--accent-soft); color: var(--accent); }
+</style>
+<!-- Yandex.Metrika counter -->
+<script>
+(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r){return;}}k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,'script','https://mc.yandex.ru/metrika/tag.js?id=114173330','ym');
+ym(114173330,'init',{ssr:true,webvisor:true,clickmap:true,accurateTrackBounce:true,trackLinks:true});
+document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[href*="t.me/labkit_ru_bot"]');if(a){ym(114173330,'reachGoal','bot_click');}});
+</script>
+<noscript><div><img src="https://mc.yandex.ru/watch/114173330" style="position:absolute;left:-9999px" alt=""></div></noscript>
+<!-- /Yandex.Metrika counter -->
+</head>
+<body>
+<main class="page">
+  <div>
+    <a class="brand" href="../"><i aria-hidden="true">L</i>LabKit · все калькуляторы</a>
+    <h1>Прочность бетона по образцам</h1>
+  </div>
+  <p class="lead">Выбери класс и форму образцов, вбей нагрузки с пресса. Прочность образцов, серий и соответствие классу по ГОСТ 18105 считаются сразу. Бесплатно и без регистрации.</p>
+
+  <section class="card" aria-labelledby="h-cfg">
+    <div class="card-h"><h2 id="h-cfg">Класс и образцы</h2><span class="tag">ГОСТ 18105-2018, схема Г</span></div>
+    <div class="fld-grid">
+      <label class="fld"><span>Класс бетона</span><select id="klass"></select></label>
+      <label class="fld"><span>Образцы</span><select id="forma"></select></label>
+      <label class="fld"><span>Что оцениваем</span><select id="naz"><option value="smes">Бетонная смесь (партия)</option><option value="mon">Монолитная конструкция</option></select></label>
+      <label class="fld"><span>Требуемая прочность, % от класса</span><input id="proc" inputmode="decimal" autocomplete="off" value="100"></label>
+    </div>
+    <p class="info" id="cfg-info">—</p>
+  </section>
+
+  <section class="card" aria-labelledby="h-probes">
+    <div class="card-h"><h2 id="h-probes">Разрушающие нагрузки</h2><span class="tag">ГОСТ 10180-2012</span></div>
+    <p class="sub">Нагрузка с пресса F, кН, для каждого образца. Размеры — номинальные для выбранной формы.</p>
+    <div id="probes"></div>
+    <div class="row-btns">
+      <button type="button" class="btn ghost" id="b-add">+ Проба</button>
+      <button type="button" class="btn" id="b-clear">Очистить</button>
+      <button type="button" class="btn" id="b-ex">Вернуть пример</button>
+    </div>
+    <p class="note" id="ex-note">В полях стоит пример. Замени цифры на свои.</p>
+  </section>
+
+  <section class="card result" aria-labelledby="h-res" aria-live="polite">
+    <div class="card-h"><h2 id="h-res">Результат</h2><span class="tag">ГОСТ 18105-2018</span></div>
+    <div class="mk"><span class="mk-num" id="rm">—</span><span class="mk-cap">средняя прочность Rm, МПа</span></div>
+    <div><span class="pill" id="verdict">Заполни нагрузки</span></div>
+    <div class="facts">
+      <div class="fact"><span>Проб в расчёте</span><b id="r-n">—</b></div>
+      <div class="fact"><span>Минимальная проба</span><b id="r-min">—</b></div>
+      <div class="fact"><span>Коэфф. вариации Vm</span><b id="r-vm">—</b></div>
+    </div>
+    <p class="formula" id="r-rule"></p>
+    <p class="note" id="r-note"></p>
+  </section>
+
+  <section class="card cta" aria-labelledby="h-cta">
+    <h2 id="h-cta">Нужен готовый протокол в Word?</h2>
+    <ul>
+      <li>Песок, щебень, отсев, ЩПС, бетон и керны асфальта в одном месте</li>
+      <li>Нормы по ГОСТ подставляются сами, видно «соответствует / нет»</li>
+      <li>Протокол с шапкой, номером и подписью приходит в чат за секунду</li>
+      <li>Черновики не теряются, можно продолжить с телефона</li>
+    </ul>
+    <a class="tg-btn" href="https://t.me/labkit_ru_bot" target="_blank" rel="noopener">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21.9 4.3 18.7 19.4c-.2 1-.9 1.3-1.7.8l-4.8-3.5-2.3 2.2c-.3.3-.5.5-1 .5l.3-4.9 8.9-8c.4-.3-.1-.5-.6-.2l-11 6.9-4.7-1.5c-1-.3-1-1 .2-1.5L20.6 3c.9-.3 1.6.2 1.3 1.3z"/></svg>
+      Открыть бота @labkit_ru_bot
+    </a>
+    <small>Попробовать можно бесплатно</small>
+  </section>
+
+  <section aria-labelledby="h-more" style="display:flex;flex-direction:column;gap:10px">
+    <h2 id="h-more">Другие калькуляторы</h2>
+    <div class="list">
+      <a class="item" href="../modul-krupnosti-peska/"><span class="ico" style="background:#c48a2c" aria-hidden="true">Мк</span><span class="tx"><b>Модуль крупности песка</b><span>ГОСТ 8735 и 8736: остатки на ситах, Мк, группа песка</span></span></a>
+      <a class="item" href="../zernovoy-sostav-shchebnya/"><span class="ico" style="background:#6b7480" aria-hidden="true">Щ</span><span class="tx"><b>Зерновой состав щебня</b><span>ГОСТ 32703 с изм. 1 и 2: проход через сита, марка 90/10, 85/15</span></span></a>
+      <a class="item" href="../pustoty-v-kernah/"><span class="ico" style="background:#3a3a3c" aria-hidden="true">А</span><span class="tx"><b>Пустоты в кернах асфальтобетона</b><span>ГОСТ Р 58401.10 и ГОСТ Р 58406</span></span></a>
+    </div>
+  </section>
+
+  <section class="card how" aria-labelledby="h-how">
+<h2 id="h-how">Как считают прочность бетона по образцам</h2>
+    <ol>
+      <li>Прочность образца: R = α · F / A, где F — разрушающая нагрузка, A — площадь сечения, α — масштабный коэффициент для формы и размера образца (у куба 150 мм α = 1, у куба 100 мм α = 0,95).</li>
+      <li>Прочность пробы (серии) по п. 8.4 ГОСТ 10180: из 2 образцов — среднее двух, из 3 — по двум наибольшим, из 4 — по трём, из 6 — по четырём.</li>
+      <li>По схеме Г ГОСТ 18105 для бетонной смеси нужно: средняя Rm ≥ 1,28 · B, и каждая проба ≥ B. Для монолитной конструкции: Bф = 0,8 · Rm ≥ B.</li>
+      <li>При 3 пробах и больше проверяют коэффициент вариации: он не должен превышать граничный по табл. 3 ГОСТ 18105.</li>
+    </ol>
+    <p>В Telegram-боте LabKit можно ввести фактические размеры и массу образцов, отбраковать дефектные и получить протокол в Word.</p>
+  </section>
+
+  <footer>Расчёт ориентировочный. Для официального протокола сверяйтесь с действующими редакциями ГОСТ.</footer>
+</main>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const num = s => { const t = String(s ?? "").trim().replace(",", "."); if (t === "") return null; const v = Number(t); return Number.isFinite(v) ? v : null; };
+function okr(x, n = 1) { const sign = x < 0 ? -1 : 1; const v = Math.abs(parseFloat(x.toFixed(9))); return sign * Number(Math.round(Number(v + "e" + n)) + "e-" + n); }
+const f = (x, n = 1) => x == null || !Number.isFinite(x) ? "—" : okr(x, n).toFixed(n).replace(".", ",");
+const kr = x => x == null ? "—" : String(parseFloat(x.toFixed(3))).replace(".", ",");
+const mean = a => { a = a.filter(x => x != null); return a.length ? a.reduce((p, c) => p + c, 0) / a.length : null; };
+function oc(v, mn, mx, n = 1) { if (v == null || (mn == null && mx == null)) return ""; const z = okr(v, n); return (mn == null || z >= mn) && (mx == null || z <= mx) ? "+" : "−"; }
+function normText(mn, mx) {
+  if (mn == null && mx == null) return "—";
+  if (mn != null && mx != null) return mn === mx ? kr(mn) : kr(mn) + "–" + kr(mx);
+  return mx != null ? "до " + kr(mx) : "от " + kr(mn);
+}
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+function markBad() { document.querySelectorAll("input[inputmode=decimal]").forEach(el => el.classList.toggle("bad", el.value.trim() !== "" && num(el.value) == null)); }
+function setPill(el, text, state) { el.textContent = text; el.className = "pill" + (state === true ? " ok" : state === false ? " bad" : ""); }
+
+const B_KL = [7.5, 10, 12.5, 15, 20, 22.5, 25, 27.5, 30, 35, 40, 45, 50, 55, 60];
+// масштабный коэффициент α (табл. 4 ГОСТ 10180): [название, α, сторона/диаметр мм, высота мм, цилиндр?]
+const B_FORM = {
+  k70: ["Куб 70 мм", 0.85, 70, 70, 0], k100: ["Куб 100 мм", 0.95, 100, 100, 0], k150: ["Куб 150 мм", 1.00, 150, 150, 0],
+  k200: ["Куб 200 мм", 1.05, 200, 200, 0], k250: ["Куб 250 мм", 1.08, 250, 250, 0], k300: ["Куб 300 мм", 1.10, 300, 300, 0],
+  c100: ["Цилиндр 100×200", 1.16, 100, 200, 1], c150: ["Цилиндр 150×300", 1.20, 150, 300, 1], c200: ["Цилиндр 200×400", 1.24, 200, 400, 1],
+  c250: ["Цилиндр 250×500", 1.26, 250, 500, 1], c300: ["Цилиндр 300×600", 1.28, 300, 600, 1],
+};
+const B_VR = [[3, 4], [5, 6], [8, 7.5], [10, 8], [15, 9], [20, 10], [30, 12]]; // табл. 3 ГОСТ 18105, Vr для схемы Г
+function vrFor(n) {
+  if (n < 3) return null; if (n >= 30) return 12;
+  for (let i = 1; i < B_VR.length; i++) { const [n0, v0] = B_VR[i - 1], [n1, v1] = B_VR[i]; if (n <= n1) return v0 + (v1 - v0) * (n - n0) / (n1 - n0); }
+  return 12;
+}
+$("klass").innerHTML = B_KL.map(v => `<option value="${v}">B${kr(v)}</option>`).join("");
+$("forma").innerHTML = Object.entries(B_FORM).map(([k, v]) => `<option value="${k}">${v[0]} (α = ${f(v[1], 2)})</option>`).join("");
+const EX = { klass: "20", forma: "k100", naz: "smes", proc: "100", P: [["290", "298", "285"], ["276", "281", "289"], ["300", "292", "286"]] };
+let P = [];
+function renderProbes() {
+  $("probes").innerHTML = P.map((pr, pi) => `<div class="block"><div class="block-h"><b>Проба ${pi + 1}</b>
+      <span><button type="button" class="btn x" data-a="del-o" data-p="${pi}"${pr.length <= 2 ? " hidden" : ""} aria-label="Убрать образец">− образец</button>
+      <button type="button" class="btn ghost" data-a="add-o" data-p="${pi}"${pr.length >= 6 ? " hidden" : ""}>+ образец</button>
+      ${P.length > 1 ? `<button type="button" class="btn x" data-a="del-p" data-p="${pi}" aria-label="Удалить пробу ${pi + 1}">✕</button>` : ""}</span></div>
+    <div class="trio">${pr.map((v, i) => `<label class="fld"><span>Образец ${i + 1}, кН</span><input inputmode="decimal" autocomplete="off" data-p="${pi}" data-i="${i}" value="${esc(v)}"></label>`).join("")}</div>
+    <p class="sub" id="ps${pi}">—</p></div>`).join("");
+  calc();
+}
+function fill(ex) {
+  if (ex) { $("klass").value = EX.klass; $("forma").value = EX.forma; $("naz").value = EX.naz; $("proc").value = EX.proc; }
+  P = ex ? EX.P.map(p => [...p]) : [["", "", ""], ["", "", ""]];
+  $("ex-note").hidden = !ex;
+  renderProbes();
+}
+function calc() {
+  markBad();
+  const F = B_FORM[$("forma").value], kl = num($("klass").value), proc = num($("proc").value) ?? 100, Bn = kl * proc / 100;
+  const A = F[4] ? Math.PI * F[2] * F[2] / 4 : F[2] * F[2], naz = $("naz").value, warn = [];
+  $("cfg-info").textContent = `B${kr(kl)}${proc !== 100 ? ` · ${kr(proc)} % от класса = ${f(Bn)} МПа` : ""} · ${F[0]}, α = ${f(F[1], 2)} · ` +
+    (naz === "smes" ? `нужно Rm ≥ Rт = 1,28 × ${f(Bn)} = ${f(1.28 * Bn)} МПа и каждая проба ≥ ${f(Bn)} МПа` : `нужно Bф = 0,8 · Rm ≥ ${f(Bn)} МПа`);
+  const Rs = P.map((pr, pi) => {
+    const r = pr.map(v => { const x = num(v); return x > 0 ? F[1] * x * 1000 / A : null; }).filter(v => v != null);
+    const n = r.length, take = { 2: 2, 3: 2, 4: 3, 6: 4 }[n] ?? n;
+    if (n === 5) warn.push(`Проба ${pi + 1}: серия из 5 образцов в ГОСТ 10180 не описана — взято среднее всех пяти.`);
+    const used = n >= 2 ? [...r].sort((p, q) => q - p).slice(0, take) : [];
+    const rs = used.length ? mean(used.map(v => okr(v, 1))) : null;
+    const el = $("ps" + pi);
+    if (el) el.innerHTML = r.length ? `R образцов: ${r.map(v => used.includes(v) ? f(v) : `(${f(v)})`).join(" · ")} МПа · прочность пробы <b>${f(rs)}</b> МПа` : "—";
+    return rs;
+  }).filter(v => v != null);
+  const n = Rs.length, Rm = mean(Rs), Rmin = n ? Math.min(...Rs) : null;
+  $("rm").textContent = f(Rm); $("r-n").textContent = n || "—"; $("r-min").textContent = Rmin == null ? "—" : f(Rmin) + " МПа";
+  let Vm = null;
+  if (n >= 2) {
+    const Sm = Math.sqrt(Rs.reduce((p, v) => p + (v - Rm) ** 2, 0) / (n - 1)); Vm = Sm / Rm * 100;
+    const Vr = vrFor(n);
+    if (Vr != null && okr(Vm) > Vr) warn.push(`Коэффициент вариации ${f(Vm)} % больше граничного ${f(Vr)} % (табл. 3 ГОСТ 18105): по схеме Г оценивать нельзя, нужно больше проб.`);
+  }
+  if (n === 1) warn.push("По ГОСТ 18105 от партии берут не менее двух проб.");
+  $("r-vm").textContent = Vm == null ? "—" : f(Vm) + " %";
+  const note = $("r-note"); note.className = warn.length ? "note warn" : "note"; note.textContent = warn.join(" ");
+  if (!n) { setPill($("verdict"), "Заполни нагрузки хотя бы в одной пробе"); $("r-rule").textContent = ""; return; }
+  if (naz === "smes") {
+    const Rt = 1.28 * Bn, ok1 = okr(Rm) >= okr(Rt), ok2 = okr(Rmin) >= okr(Bn);
+    $("r-rule").textContent = `Rm ${f(Rm)} ${ok1 ? "≥" : "<"} Rт ${f(Rt)} МПа; минимальная проба ${f(Rmin)} ${ok2 ? "≥" : "<"} ${f(Bn)} МПа`;
+    setPill($("verdict"), ok1 && ok2 ? `Соответствует B${kr(kl)}` : `НЕ соответствует B${kr(kl)}`, ok1 && ok2);
+  } else {
+    const Bf = 0.8 * Rm, ok = okr(Bf) >= okr(Bn);
+    $("r-rule").textContent = `Bф = 0,8 × ${f(Rm)} = ${f(Bf)} МПа ${ok ? "≥" : "<"} ${f(Bn)} МПа`;
+    setPill($("verdict"), ok ? `Соответствует B${kr(kl)}` : `НЕ соответствует B${kr(kl)}`, ok);
+  }
+}
+document.addEventListener("input", e => {
+  const t = e.target; if (t.tagName !== "INPUT") return;
+  if (t.dataset.p != null && t.dataset.i != null) P[+t.dataset.p][+t.dataset.i] = t.value;
+  $("ex-note").hidden = true; calc();
+});
+["klass", "forma", "naz"].forEach(id => $(id).addEventListener("change", calc));
+$("probes").addEventListener("click", e => {
+  const b = e.target.closest("[data-a]"); if (!b) return;
+  const pi = +b.dataset.p;
+  if (b.dataset.a === "add-o") P[pi].push(""); else if (b.dataset.a === "del-o") P[pi].pop(); else if (b.dataset.a === "del-p") P.splice(pi, 1);
+  renderProbes();
+});
+$("b-add").addEventListener("click", () => { P.push(["", "", ""]); renderProbes(); });
+$("b-clear").addEventListener("click", () => fill(false));
+$("b-ex").addEventListener("click", () => fill(true));
+fill(true);
+</script>
+</body>
+</html>
