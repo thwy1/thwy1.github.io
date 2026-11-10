@@ -112,6 +112,11 @@ input.bad { border-color: var(--bad); background: var(--bad-soft); }
   background: var(--tg); color: #fff; font: 600 1.05rem var(--font-body); transition: transform .12s ease-out, opacity .15s;
 }
 .tg-btn:active { transform: scale(.97); opacity: .9; }
+.app-btn {
+  display: flex; align-items: center; justify-content: center; text-decoration: none; border-radius: 14px; padding: 14px 18px;
+  background: var(--bg); color: var(--fg); font: 600 1.05rem var(--font-body); transition: transform .12s ease-out, opacity .15s;
+}
+.app-btn:active { transform: scale(.97); opacity: .9; }
 .cta small { opacity: .65; text-align: center; }
 
 .list { background: var(--surface); border-radius: 16px; overflow: hidden; }
@@ -169,6 +174,7 @@ select option, select optgroup { background-color: var(--surface); color: var(--
 (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r){return;}}k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,'script','https://mc.yandex.ru/metrika/tag.js?id=114173330','ym');
 ym(114173330,'init',{ssr:true,webvisor:true,clickmap:true,accurateTrackBounce:true,trackLinks:true});
 document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[href*="t.me/labkit_ru_bot"]');if(a){ym(114173330,'reachGoal','bot_click');}});
+document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a.app-btn');if(a){ym(114173330,'reachGoal','app_click');}});
 </script>
 <noscript><div><img src="https://mc.yandex.ru/watch/114173330" style="position:absolute;left:-9999px" alt=""></div></noscript>
 <!-- /Yandex.Metrika counter -->
@@ -222,14 +228,15 @@ document.addEventListener('click',function(e){var a=e.target.closest&&e.target.c
     <ul>
       <li>Песок, щебень, отсев, ЩПС, бетон и керны асфальта в одном месте</li>
       <li>Нормы по ГОСТ подставляются сами, видно «соответствует / нет»</li>
-      <li>Протокол с шапкой, номером и подписью приходит в чат за секунду</li>
-      <li>Черновики не теряются, можно продолжить с телефона</li>
+      <li>Протокол с шапкой, номером и подписью в Word за секунду</li>
+      <li>Работает без интернета: в карьере и на объекте, где нет связи</li>
     </ul>
+    <a class="app-btn" href="/app/">Открыть приложение LabKit</a>
     <a class="tg-btn" href="https://t.me/labkit_ru_bot" target="_blank" rel="noopener">
       <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21.9 4.3 18.7 19.4c-.2 1-.9 1.3-1.7.8l-4.8-3.5-2.3 2.2c-.3.3-.5.5-1 .5l.3-4.9 8.9-8c.4-.3-.1-.5-.6-.2l-11 6.9-4.7-1.5c-1-.3-1-1 .2-1.5L20.6 3c.9-.3 1.6.2 1.3 1.3z"/></svg>
-      Открыть бота @labkit_ru_bot
+      Или в Telegram: @labkit_ru_bot
     </a>
-    <small>Попробовать можно бесплатно</small>
+    <small>Бесплатно, без регистрации</small>
   </section>
 
   <section aria-labelledby="h-more" style="display:flex;flex-direction:column;gap:10px">

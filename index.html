@@ -55,6 +55,8 @@ a.item::after { content: ""; flex: none; width: 8px; height: 8px; border: solid 
 .cta p { margin: 0; opacity: .8; }
 .tg-btn { display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; border-radius: 14px; padding: 14px 18px; background: var(--tg); color: #fff; font: 600 1.05rem var(--font-body); transition: transform .12s ease-out; }
 .tg-btn:active { transform: scale(.97); }
+.app-btn { display: flex; align-items: center; justify-content: center; text-decoration: none; border-radius: 14px; padding: 14px 18px; background: var(--bg); color: var(--fg); font: 600 1.05rem var(--font-body); transition: transform .12s ease-out; }
+.app-btn:active { transform: scale(.97); }
 .about { background: var(--surface); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 8px; }
 .about h2 { margin: 0; }
 .about p { margin: 0; }
@@ -67,6 +69,7 @@ footer { color: var(--muted); font-size: .8rem; text-align: center; }
 (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r){return;}}k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,'script','https://mc.yandex.ru/metrika/tag.js?id=114173330','ym');
 ym(114173330,'init',{ssr:true,webvisor:true,clickmap:true,accurateTrackBounce:true,trackLinks:true});
 document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[href*="t.me/labkit_ru_bot"]');if(a){ym(114173330,'reachGoal','bot_click');}});
+document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a.app-btn');if(a){ym(114173330,'reachGoal','app_click');}});
 </script>
 <noscript><div><img src="https://mc.yandex.ru/watch/114173330" style="position:absolute;left:-9999px" alt=""></div></noscript>
 <!-- /Yandex.Metrika counter -->
@@ -91,10 +94,11 @@ document.addEventListener('click',function(e){var a=e.target.closest&&e.target.c
 
   <section class="cta" aria-labelledby="h-cta">
     <h2 id="h-cta">Протокол в Word за секунду</h2>
-    <p>В Telegram-боте все материалы сразу: песок, щебень, отсев, ЩПС, бетон, керны. Нормы подставляются сами, готовый протокол с шапкой приходит в чат.</p>
+    <p>Все материалы сразу: песок, щебень, отсев, ЩПС, бетон, керны. Нормы подставляются сами, протокол с шапкой лаборатории собирается в Word. <b>Работает без интернета</b>: в карьере, на объекте, где нет связи. Ставится на телефон и компьютер как приложение.</p>
+    <a class="app-btn" href="/app/">Открыть приложение LabKit</a>
     <a class="tg-btn" href="https://t.me/labkit_ru_bot" target="_blank" rel="noopener">
       <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21.9 4.3 18.7 19.4c-.2 1-.9 1.3-1.7.8l-4.8-3.5-2.3 2.2c-.3.3-.5.5-1 .5l.3-4.9 8.9-8c.4-.3-.1-.5-.6-.2l-11 6.9-4.7-1.5c-1-.3-1-1 .2-1.5L20.6 3c.9-.3 1.6.2 1.3 1.3z"/></svg>
-      Открыть бота @labkit_ru_bot
+      Или в Telegram: @labkit_ru_bot
     </a>
   </section>
 

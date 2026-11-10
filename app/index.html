@@ -1,0 +1,2109 @@
+<!doctype html>
+<html lang="ru">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LabKit — лист испытаний</title>
+<meta name="description" content="Лист испытаний песка, щебня, бетона и асфальта с расчётами по ГОСТ и протоколом в Word. Работает без интернета.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="LabKit">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: iOS-style grouped list. Translucent sticky header (title + segmented group switch + material pills),
+   cards for each section, translucent bottom bar with the main action. Header fields and confirmations live in bottom sheets. */
+:root {
+  --bg: #f2f2f7;
+  --surface: #ffffff;
+  --sheet-bg: #f2f2f7;
+  --sheet-card: #ffffff;
+  --input: rgba(118, 118, 128, .12);
+  --fg: #1c1c1e;
+  --muted: #6e6e73;
+  --line: rgba(60, 60, 67, .2);
+  --grabber: rgba(60, 60, 67, .3);
+  --accent: #007aff;
+  --accent-soft: rgba(0, 122, 255, .1);
+  --accent-ring: rgba(0, 122, 255, .22);
+  --accent-fg: #ffffff;
+  --ok: #248a3d;
+  --bad: #d70015;
+  --bad-soft: rgba(255, 59, 48, .1);
+  --warn-bg: #fff4d6;
+  --warn-fg: #7a5200;
+  --chrome: rgba(242, 242, 247, .78);
+  --chrome-bar: rgba(249, 249, 251, .8);
+  --seg-bg: rgba(118, 118, 128, .12);
+  --thumb: #ffffff;
+  --scrim: rgba(0, 0, 0, .3);
+  --toast-bg: rgba(28, 28, 30, .88);
+  --toast-fg: #ffffff;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-num: var(--font-body);
+  --ease: cubic-bezier(.32, .72, 0, 1);
+  --gut: max(16px, env(safe-area-inset-left, 0px));
+  --gut-r: max(16px, env(safe-area-inset-right, 0px));
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #000000; --surface: #1c1c1e; --sheet-bg: #1c1c1e; --sheet-card: #2c2c2e; --input: rgba(118, 118, 128, .24);
+    --fg: #f5f5f7; --muted: #98989f; --line: rgba(84, 84, 88, .65); --grabber: rgba(235, 235, 245, .3);
+    --accent: #0a84ff; --accent-soft: rgba(10, 132, 255, .18); --accent-ring: rgba(10, 132, 255, .35); --accent-fg: #ffffff;
+    --ok: #30d158; --bad: #ff453a; --bad-soft: rgba(255, 69, 58, .16); --warn-bg: #3a2e0a; --warn-fg: #ffd60a;
+    --chrome: rgba(0, 0, 0, .72); --chrome-bar: rgba(22, 22, 24, .78); --seg-bg: rgba(118, 118, 128, .24); --thumb: #636366;
+    --scrim: rgba(0, 0, 0, .5); --toast-bg: rgba(58, 58, 60, .92); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #000000; --surface: #1c1c1e; --sheet-bg: #1c1c1e; --sheet-card: #2c2c2e; --input: rgba(118, 118, 128, .24);
+  --fg: #f5f5f7; --muted: #98989f; --line: rgba(84, 84, 88, .65); --grabber: rgba(235, 235, 245, .3);
+  --accent: #0a84ff; --accent-soft: rgba(10, 132, 255, .18); --accent-ring: rgba(10, 132, 255, .35); --accent-fg: #ffffff;
+  --ok: #30d158; --bad: #ff453a; --bad-soft: rgba(255, 69, 58, .16); --warn-bg: #3a2e0a; --warn-fg: #ffd60a;
+  --chrome: rgba(0, 0, 0, .72); --chrome-bar: rgba(22, 22, 24, .78); --seg-bg: rgba(118, 118, 128, .24); --thumb: #636366;
+  --scrim: rgba(0, 0, 0, .5); --toast-bg: rgba(58, 58, 60, .92); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+html.sheet-open, html.sheet-open body { overflow: hidden; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.4 var(--font-body); letter-spacing: -.01em;
+  -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
+  padding: 0 var(--gut-r) calc(104px + env(safe-area-inset-bottom, 0px)) var(--gut);
+}
+.wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+
+/* ---- шапка: полупрозрачный материал, контент уезжает под неё ---- */
+header.top {
+  position: sticky; top: 0; z-index: 5;
+  margin-inline: calc(-1 * var(--gut)) calc(-1 * var(--gut-r));
+  padding: calc(12px + env(safe-area-inset-top, 0px)) var(--gut-r) 10px var(--gut);
+  background: var(--chrome); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 12px;
+  box-shadow: 0 .5px 0 transparent; transition: box-shadow .25s var(--ease);
+}
+header.top.scrolled { box-shadow: 0 .5px 0 var(--line); }
+h1 { font: 700 1.6rem/1.1 var(--font-display); letter-spacing: -.025em; margin: 0; text-wrap: balance; flex: 1; min-width: 0; }
+.icon-btn {
+  order: 0; flex: none; width: 36px; height: 36px; border-radius: 50%; border: 0; display: grid; place-items: center;
+  background: var(--input); color: var(--accent); cursor: pointer; transition: transform .12s ease-out, opacity .15s;
+}
+.icon-btn:active { transform: scale(.92); }
+.seg { order: 1; }
+#mats { order: 2; }
+h1 { white-space: nowrap; }
+/* на телефоне: строка «заголовок + меню», под ней сегмент во всю ширину, как в iOS */
+@media (max-width: 600px) {
+  .seg { flex-basis: 100%; }
+  .seg button { flex: 1; }
+}
+
+/* сегмент с плавающим ползунком */
+.seg { position: relative; display: inline-flex; padding: 2px; border-radius: 9px; background: var(--seg-bg); isolation: isolate; }
+.seg .thumb {
+  position: absolute; top: 2px; bottom: 2px; left: 2px; width: 0; border-radius: 7px; z-index: -1;
+  background: var(--thumb); box-shadow: 0 3px 8px rgba(0, 0, 0, .12), 0 3px 1px rgba(0, 0, 0, .04);
+}
+.seg.ready .thumb { transition: transform .42s var(--ease), width .42s var(--ease); }
+.seg button {
+  font: 600 .9rem var(--font-body); letter-spacing: -.01em; padding: 6px 14px; border: 0; border-radius: 7px;
+  background: transparent; color: var(--fg); cursor: pointer; transition: opacity .15s, transform .12s ease-out;
+}
+.seg button[aria-pressed="false"] { opacity: .75; }
+
+/* материалы — «таблетки», лента листается пальцем от края до края */
+.mats {
+  flex-basis: calc(100% + var(--gut) + var(--gut-r)); margin-inline: calc(-1 * var(--gut)) calc(-1 * var(--gut-r));
+  padding: 2px var(--gut-r) 2px var(--gut); scroll-padding-inline: var(--gut);
+  display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
+}
+.mats::-webkit-scrollbar { display: none; }
+.mats button {
+  flex: none; font: 600 .92rem var(--font-body); letter-spacing: -.01em; padding: 7px 15px; border-radius: 999px; border: 0;
+  background: var(--input); color: var(--fg); cursor: pointer;
+  transition: background-color .3s var(--ease), color .3s var(--ease), transform .12s ease-out;
+}
+.mats button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.mats button .soon { font-weight: 400; opacity: .6; font-size: .8rem; }
+
+/* ---- карточки и секции ---- */
+.empty { background: var(--surface); border-radius: 14px; padding: 20px 16px; color: var(--muted); }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.hint { color: var(--muted); font-size: .86rem; margin: 0; }
+details.sec { background: var(--surface); border-radius: 14px; overflow: hidden; }
+details.sec > summary {
+  list-style: none; cursor: pointer; padding: 13px 16px; min-height: 50px; display: flex; gap: 10px; align-items: center;
+  -webkit-user-select: none; user-select: none; transition: background-color .2s;
+}
+details.sec > summary:active { background: var(--input); }
+details.sec > summary::-webkit-details-marker { display: none; }
+.sec-t { font: 600 1.06rem/1.25 var(--font-display); letter-spacing: -.02em; flex: 1; min-width: 0; }
+.sec-g { font-size: .72rem; color: var(--muted); letter-spacing: .01em; white-space: nowrap; }
+details.sec > summary::after {
+  content: ""; flex: none; width: 8px; height: 8px; margin: 0 2px 4px 2px; border: solid var(--muted); border-width: 0 2px 2px 0;
+  transform: rotate(45deg); opacity: .7; transition: transform .38s var(--ease), margin .38s var(--ease);
+}
+details.sec:not([open]) > summary::after, details.sec.closing > summary::after { transform: rotate(-45deg); margin-bottom: 0; }
+.body { padding: 2px 16px 16px; display: flex; flex-direction: column; gap: 12px; }
+
+/* строка-ссылка (как ячейка «Настроек» iPhone) */
+.row-link {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; border: 0; border-radius: 14px;
+  background: var(--surface); color: var(--fg); padding: 11px 16px; min-height: 58px; font: inherit; cursor: pointer;
+  transition: transform .12s ease-out, background-color .2s;
+}
+.row-link .ico { flex: none; width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; background: var(--accent); color: #fff; }
+.row-link .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.row-link .tx b { font: 600 1.02rem var(--font-display); letter-spacing: -.02em; }
+.row-link .tx small { color: var(--muted); font-size: .85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row-link::after { content: ""; flex: none; width: 8px; height: 8px; border: solid var(--muted); border-width: 2px 2px 0 0; transform: rotate(45deg); opacity: .55; margin-right: 4px; }
+
+/* ---- поля ---- */
+.fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+label.f { display: flex; flex-direction: column; justify-content: flex-end; gap: 5px; min-width: 0; }
+label.f > span { font-size: .8rem; color: var(--muted); padding-left: 2px; }
+input, select {
+  width: 100%; min-width: 0; font: 1rem var(--font-num); font-variant-numeric: tabular-nums; color: var(--fg);
+  background-color: var(--input); border: 1px solid transparent; border-radius: 10px; padding: 10px 11px;
+  -webkit-appearance: none; appearance: none; transition: border-color .2s, box-shadow .2s, background-color .2s;
+}
+select {
+  font-family: var(--font-body); padding-right: 30px; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5l3 3 3-3' fill='none' stroke='%238e8e93' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center;
+}
+/* пункты списка: сплошной фон темы, иначе система рисует светлый фон под светлый текст */
+select option, select optgroup { background-color: var(--surface); color: var(--fg); }
+select option:checked { background-color: var(--accent); color: var(--accent-fg); }
+input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-ring); }
+button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+input.bad { border-color: var(--bad); background-color: var(--bad-soft); }
+.cfg-info { font-size: .9rem; padding: 10px 12px; border-radius: 10px; background: var(--input); display: flex; flex-direction: column; gap: 4px; }
+.cfg-info b { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+
+/* ---- таблицы рассева ---- */
+.grid { display: grid; gap: 6px 8px; align-items: center; font-variant-numeric: tabular-nums; }
+.grid.g3 { grid-template-columns: 3.6rem minmax(4.5rem, 1fr) 3.4rem 3.4rem; }
+.grid.g4 { grid-template-columns: 3rem minmax(4rem, 1fr) 2.9rem 2.9rem 3.9rem; gap: 6px; }
+.grid.g4 output { font-size: .86rem; }
+.grid.gs { grid-template-columns: 3.4rem 1fr 5rem 1.4rem; }
+.grid.gs output { white-space: nowrap; }
+.grid.gb { grid-template-columns: 1.4rem 1fr 1fr 3.8rem 3.2rem; gap: 6px; }
+.grid.gb output { white-space: nowrap; font-size: .9rem; }
+.btn.x.cull { padding: 6px 4px; color: var(--ok); font-size: .85rem; }
+.btn.x.cull[aria-pressed="true"] { color: var(--bad); }
+.fields.f4 { grid-template-columns: 1.1fr 1fr 1fr 1fr; gap: 8px; }
+.fields.f2 { grid-template-columns: 1fr 1fr; }
+.fields.f3 { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.fields.f2 label.f > span, .fields.f3 label.f > span { font-size: .78rem; }
+.fields.f4 label.f > span { font-size: .75rem; }
+.grid .h, .norms .h { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+.grid .s { font: 600 .95rem var(--font-num); font-variant-numeric: tabular-nums; }
+.grid output, .val { font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: .95rem; text-align: right; }
+.v-plus { color: var(--ok); font-weight: 600; }
+.v-minus { color: var(--bad); font-weight: 600; }
+.res { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 11px 13px; border-radius: 12px; background: var(--input); font-size: .95rem; }
+.res b { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+.frac { border-top: .5px solid var(--line); padding-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.frac-h { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.frac-h input { width: 5.2rem; }
+.norms { display: grid; grid-template-columns: 4.5rem 1fr 1fr 2.4rem; gap: 6px 8px; align-items: center; }
+.warn { background: var(--warn-bg); color: var(--warn-fg); border-radius: 12px; padding: 11px 13px; font-size: .92rem; display: flex; flex-direction: column; gap: 4px; }
+
+/* ---- кнопки: отклик сразу на нажатие ---- */
+.btn {
+  font: 600 .95rem var(--font-body); letter-spacing: -.01em; border-radius: 10px; padding: 9px 14px; cursor: pointer;
+  border: 0; background: var(--input); color: var(--accent); touch-action: manipulation;
+  transition: transform .12s ease-out, opacity .12s, background-color .2s;
+}
+.btn.ghost { background: var(--accent-soft); color: var(--accent); }
+.btn.x { padding: 6px 10px; color: var(--bad); background: transparent; }
+.btn.danger { color: var(--bad); background: var(--bad-soft); }
+.btn.primary { background: var(--accent); color: var(--accent-fg); padding: 12px 20px; border-radius: 12px; font-size: 1rem; }
+.btn:active, .seg button:active, .mats button:active, .row-link:active { transform: scale(.96); }
+.btn.primary:active { opacity: .85; }
+
+/* ---- нижняя панель ---- */
+.bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 6;
+  background: var(--chrome-bar); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+  box-shadow: 0 -.5px 0 var(--line);
+  padding: 10px var(--gut-r) calc(10px + env(safe-area-inset-bottom, 0px)) var(--gut);
+}
+.bar-in { max-width: 720px; margin: 0 auto; display: flex; gap: 12px; align-items: center; justify-content: space-between; }
+.chip { font-size: .9rem; min-width: 0; line-height: 1.3; }
+.chip b { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+
+/* ---- тост: всплывает капсулой над панелью ---- */
+.toast {
+  position: fixed; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); z-index: 30;
+  max-width: min(440px, calc(100% - 32px)); padding: 11px 16px; border-radius: 14px; font-size: .92rem; line-height: 1.3;
+  background: var(--toast-bg); color: var(--toast-fg); box-shadow: 0 8px 30px rgba(0, 0, 0, .2);
+  -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+  opacity: 0; transform: translate(-50%, 14px) scale(.96); pointer-events: none;
+  transition: opacity .3s var(--ease), transform .45s var(--ease);
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
+
+/* ---- шторка (bottom sheet) ---- */
+.scrim { position: fixed; inset: 0; z-index: 20; background: var(--scrim); opacity: 0; pointer-events: none; }
+.scrim.on { pointer-events: auto; }
+.sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 21; margin: 0 auto; max-width: 720px;
+  max-height: 88vh; max-height: calc(var(--tg-viewport-stable-height, 100vh) - 36px);
+  display: flex; flex-direction: column; background: var(--sheet-bg); border-radius: 16px 16px 0 0;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, .18); transform: translate3d(0, 100%, 0); will-change: transform; outline: none;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.sheet-top { flex: none; touch-action: none; cursor: grab; -webkit-user-select: none; user-select: none; }
+.sheet.dragging .sheet-top { cursor: grabbing; }
+.grab { padding: 7px 0 3px; }
+.grab::before { content: ""; display: block; width: 36px; height: 5px; border-radius: 3px; background: var(--grabber); margin: 0 auto; }
+.sheet-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 16px 12px 20px; }
+.sheet-h h2 { margin: 0; font: 700 1.25rem/1.2 var(--font-display); letter-spacing: -.025em; }
+.sheet-done { border: 0; background: none; color: var(--accent); font: 600 1rem var(--font-body); padding: 6px 4px; cursor: pointer; transition: opacity .15s; }
+.sheet-done:active { opacity: .5; }
+.sheet-c { overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 0 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+.sheet-card { background: var(--sheet-card); border-radius: 14px; padding: 14px; }
+.sheet-p { margin: 0 4px; color: var(--muted); font-size: .95rem; }
+.sheet-actions { display: flex; flex-direction: column; gap: 8px; }
+.btn.big { width: 100%; padding: 15px; border-radius: 14px; font-size: 1.05rem; background: var(--sheet-card); }
+.btn.big.primary { background: var(--accent); color: var(--accent-fg); }
+.menu-list { display: flex; flex-direction: column; gap: 8px; }
+.menu-list .row-link { background: var(--sheet-card); }
+.lock { flex: none; font-size: .78rem; font-weight: 600; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 3px 9px; }
+.logo-card { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.logo-box {
+  width: 100%; min-height: 84px; border-radius: 12px; background: var(--input); display: grid; place-items: center;
+  color: var(--muted); font-size: .9rem; padding: 12px;
+}
+.logo-box img { max-width: 220px; max-height: 80px; object-fit: contain; }
+.jr-list { background: var(--sheet-card); border-radius: 14px; overflow: hidden; }
+.jr-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
+.jr-item + .jr-item { box-shadow: inset 0 .5px 0 var(--line); }
+.jr-item .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.jr-item .tx b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jr-item .tx span { font-size: .84rem; color: var(--muted); }
+.btn.destructive { color: var(--bad); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: .01ms !important; }
+  .toast { transition: opacity .2s !important; transform: translate(-50%, 0); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  header.top { background: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .bar { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>Лист испытаний</h1>
+    <button type="button" class="icon-btn" id="btn-menu" data-act="menu" aria-label="Меню: бланк, журнал, тариф" hidden>
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3.5 6h13M3.5 10h13M3.5 14h13"/></svg>
+    </button>
+    <div class="seg" role="group" aria-label="Раздел" id="grp"></div>
+    <nav class="mats" id="mats" aria-label="Материал"></nav>
+  </header>
+  <main id="view" class="wrap"></main>
+</div>
+
+<div class="bar">
+  <div class="bar-in">
+    <div class="chip" id="chip" aria-live="polite">—</div>
+    <button type="button" class="btn primary" id="btn-word" data-act="word">Протокол Word</button>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<div class="scrim" id="scrim" data-act="sheet-close" hidden></div>
+<section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-t" tabindex="-1" hidden>
+  <div class="sheet-top" id="sheet-grab">
+    <div class="grab" aria-hidden="true"></div>
+    <div class="sheet-h"><h2 id="sheet-t"></h2><button type="button" class="sheet-done" data-act="sheet-close">Готово</button></div>
+  </div>
+  <div class="sheet-c" id="sheet-c"></div>
+</section>
+
+<script src="docx.umd.js"></script>
+<script>
+"use strict";
+/* ================= helpers ================= */
+const STORE = "labsheet-v1";
+const SAND = [2.5, 1.25, 0.63, 0.315, 0.16];
+/* ===== ГОСТ 8736-2014: группы (табл. 1, 2) и нормы по классу и группе (табл. 3, 4) ===== */
+const SAND_GR = [ // [группа, Мк св., Мк до, П.О. на 0,63 от, до]
+  ["повышенной крупности", 3.0, 3.5, 65, 75], ["крупный", 2.5, 3.0, 45, 65], ["средний", 2.0, 2.5, 30, 45],
+  ["мелкий", 1.5, 2.0, 10, 30], ["очень мелкий", 1.0, 1.5, null, 10], ["тонкий", 0.7, 1.0, null, null], ["очень тонкий", -1, 0.7, null, null]];
+// [св. 10 мм, св. 5 мм, менее 0,16 мм, пылевидные, глина в комках], % не более
+const SAND_N = {
+  I: { "повышенной крупности": [0.5, 5, 5, 2, 0.25], "крупный": [0.5, 5, 5, 2, 0.25], "средний": [0.5, 5, 5, 2, 0.25], "мелкий": [0.5, 5, 10, 3, 0.35] },
+  II: { "повышенной крупности": [5, 20, 10, 3, 0.5], "крупный": [5, 15, 15, 3, 0.5], "средний": [5, 15, 15, 3, 0.5],
+    "мелкий": [0.5, 10, 20, 5, 0.5], "очень мелкий": [0.5, 10, 20, 5, 0.5], "тонкий": [0, 0, null, 10, 1.0], "очень тонкий": [0, 0, null, 10, 1.0] },
+};
+const PCFG0 = { klass: "II", gruppa: "auto", asf: "0" };
+function sandGroup(Mk, GR = SAND_GR, n = 2) {
+  if (Mk == null) return null;
+  const z = okr(Mk, n), g = GR.find(([, lo, hi]) => z > lo && z <= hi);
+  return g ? g[0] : null;
+}
+function sandNorms(P, Mk, T = SANDT.pesok) {
+  const c = P.cfg || PCFG0, own = k => num(P.nr[k]);
+  const SAND_GR = T.GR, SAND_N = T.N;
+  const N = { dopusk: own("dopusk"), warn: [], gMk: sandGroup(Mk, SAND_GR), group: null };
+  if (c.klass === "manual") {
+    ["gr10_max", "gr5_max", "po063_min", "po063_max", "pr016_max", "pyl_max", "glina_max"].forEach(k => N[k] = own(k));
+    N.group = N.gMk; return N;
+  }
+  N.group = c.gruppa === "auto" ? N.gMk : c.gruppa;
+  if (Mk != null && !N.gMk) N.warn.push(`Мк ${f(Mk, 2)}: такой группы в ${T.gost} нет.`);
+  if (c.gruppa !== "auto" && Mk != null && N.gMk && N.gMk !== c.gruppa) N.warn.push(`По Мк ${f(Mk, 2)} песок ${N.gMk}, а выбрана группа «${c.gruppa}».`);
+  const gr = SAND_GR.find(g => g[0] === N.group), t = N.group ? SAND_N[c.klass][N.group] : null;
+  if (N.group && !t) N.warn.push(`Песок класса ${c.klass} не бывает группы «${N.group}» по ${T.gost}.`);
+  if (gr) { N.po063_min = gr[3]; N.po063_max = gr[4]; }
+  if (t) { [N.gr10_max, N.gr5_max, N.pr016_max, N.pyl_max, N.glina_max] = t; if (T.asf && c.asf === "1") N.pr016_max = null; }
+  return N;
+}
+function klassText(P) { const k = (P.cfg || PCFG0).klass; return k === "manual" ? (P.nr.klass || "") : k; }
+
+/* ===== ГОСТ 31424-2010: песок из отсевов дробления (сита как у песка по ГОСТ 8735), табл. 1, 2, п. 4.2.1.1 ===== */
+const OTS_GR = [["очень крупный", 3.5, 99, 75, null], ["повышенной крупности", 3.0, 3.5, 65, 75], ["крупный", 2.5, 3.0, 45, 65],
+  ["средний", 2.0, 2.5, 30, 45], ["мелкий", 1.5, 2.0, 10, 30]];
+const OTS_N = {
+  I: { "очень крупный": [2, 10, 3, 3, 0.35], "повышенной крупности": [0.5, 5, 5, 3, 0.35], "крупный": [0.5, 5, 5, 3, 0.35], "средний": [0.5, 5, 5, 3, 0.35], "мелкий": [0.5, 5, 10, 3, 0.35] },
+  II: { "очень крупный": [5, 15, 10, 10, 2], "повышенной крупности": [5, 15, 10, 10, 2], "крупный": [2, 12, 15, 10, 2], "средний": [2, 12, 15, 10, 2], "мелкий": [0.5, 10, 20, 10, 2] },
+};
+const SANDT = {
+  pesok: { GR: SAND_GR, N: SAND_N, gost: "ГОСТ 8736-2014", asf: true, title: "Лист результатов измерений песка природного" },
+  otsev: { GR: OTS_GR, N: OTS_N, gost: "ГОСТ 31424-2010", asf: false, title: "Лист результатов измерений песка из отсевов дробления" },
+};
+
+/* ===== ГОСТ 32730-2014: песок дробленый для дорог; сита по ГОСТ 32727 ===== */
+const RD_SITA = [2, 1, 0.5, 0.25, 0.125];
+const RD_GR = [["очень крупный", 3.8, 99, 85, null], ["повышенной крупности", 3.3, 3.8, 75, 85], ["крупный", 2.8, 3.3, 55, 75],
+  ["средний", 2.3, 2.8, 40, 55], ["мелкий", 1.8, 2.3, 20, 40]];
+// [св. 8 мм, св. 4 мм, менее 0,125 мм] (табл. 3); пыль и глина в комках по классу (табл. 4, 5)
+const RD_N = {
+  I: { "очень крупный": [2, 10, 2], "повышенной крупности": [0.5, 5, 3.5], "крупный": [0.5, 5, 3.5], "средний": [0.5, 5, 3.5], "мелкий": [0.5, 5, 7] },
+  II: { "очень крупный": [5, 15, 7], "повышенной крупности": [5, 15, 7], "крупный": [2, 12, 10], "средний": [2, 12, 10], "мелкий": [0.5, 10, 14] },
+};
+const RD_PG = { I: [3, 0.35], II: [10, 2] };
+
+/* ===== ГОСТ 25607-2009: смеси ЩПС, табл. 3 (полные остатки, %) ===== */
+const SHPS_SITA = [120, 80, 40, 20, 10, 5, 2.5, 0.63, 0.16, 0.05];
+const SHPS = {
+  "С1": ["покрытия", 40, "0|0|0-10|20-40|35-60|45-70|55-80|70-90|75-92|80-93"],
+  "С2": ["покрытия", 20, "0|0|0|0-10|10-35|25-50|35-65|55-80|65-90|75-92"],
+  "С3": ["основания, непрерывная", 120, "0-10|10-30|30-50|40-65|54-75|65-85|71-90|82-95|90-98|95-100"],
+  "С4": ["основания, непрерывная", 80, "0|0-10|15-35|28-55|40-70|50-80|60-85|80-95|91-97|95-100"],
+  "С5": ["основания, непрерывная", 40, "0|0|0-10|25-60|45-80|57-85|67-88|80-95|90-97|95-100"],
+  "С6": ["основания, непрерывная", 20, "0|0|0|0-10|25-60|50-77|58-85|80-95|90-97|95-100"],
+  "С7": ["основания, непрерывная", 10, "0|0|0|0-5|0-37|30-60|50-77|75-95|85-97|90-100"],
+  "С8": ["основания, непрерывная", 5, "0|0|0|0|0-5|0-40|20-55|55-87|75-98|80-100"],
+  "С9": ["основания, прерывистая", 80, "0|0-10|15-35|28-55|40-70|50-80|50-80|60-88|85-97|95-100"],
+  "С10": ["основания, прерывистая", 40, "0|0|0-10|25-60|45-80|57-85|57-85|71-91|87-97|95-100"],
+  "С11": ["основания, прерывистая", 20, "0|0|0|0-10|25-60|50-77|50-77|70-88|85-97|95-100"],
+};
+/* ===== навигация: группы и материалы ===== */
+const GRP = [["inert", "Инертные"], ["beton", "Бетон"], ["asfalt", "Асфальт"]];
+const MAT = { pesok: ["inert", "Песок"], sheben: ["inert", "Щебень"], otsev: ["inert", "Отсев"], shps: ["inert", "ЩПС"],
+  obr: ["beton", "Образцы"], bsm: ["beton", "Смесь"], kern: ["asfalt", "Керны"] };
+const READY = new Set(["pesok", "sheben", "otsev", "shps", "obr", "bsm", "kern"]);
+
+/* ===== Бетон: ГОСТ 10180-2012 (прочность по образцам) и ГОСТ 18105-2018 (схема Г) ===== */
+const B_KL = [7.5, 10, 12.5, 15, 20, 22.5, 25, 27.5, 30, 35, 40, 45, 50, 55, 60];
+// масштабный коэффициент α при сжатии (табл. 4 ГОСТ 10180): [название, α, сторона/диаметр мм, высота мм, цилиндр?]
+const B_FORM = {
+  k70: ["Куб 70 мм", 0.85, 70, 70, 0], k100: ["Куб 100 мм", 0.95, 100, 100, 0], k150: ["Куб 150 мм", 1.00, 150, 150, 0],
+  k200: ["Куб 200 мм", 1.05, 200, 200, 0], k250: ["Куб 250 мм", 1.08, 250, 250, 0], k300: ["Куб 300 мм", 1.10, 300, 300, 0],
+  c100: ["Цилиндр 100×200", 1.16, 100, 200, 1], c150: ["Цилиндр 150×300", 1.20, 150, 300, 1], c200: ["Цилиндр 200×400", 1.24, 200, 400, 1],
+  c250: ["Цилиндр 250×500", 1.26, 250, 500, 1], c300: ["Цилиндр 300×600", 1.28, 300, 600, 1],
+};
+const B_VR = [[3, 4], [5, 6], [8, 7.5], [10, 8], [15, 9], [20, 10], [30, 12]]; // табл. 3 ГОСТ 18105, Vr для схемы Г
+function vrFor(n) {
+  if (n < 3) return null;
+  if (n >= 30) return 12;
+  for (let i = 1; i < B_VR.length; i++) { const [n0, v0] = B_VR[i - 1], [n1, v1] = B_VR[i]; if (n <= n1) return v0 + (v1 - v0) * (n - n0) / (n1 - n0); }
+  return 12;
+}
+function obrS(f, m) { return { f, m, x: "" }; }
+
+/* ===== Бетонная смесь: ГОСТ 7473-2010 (марки, допуски) и ГОСТ 10181-2014 (методы) ===== */
+const BS_P = [["П1", 1, 4], ["П2", 5, 9], ["П3", 10, 15], ["П4", 16, 20], ["П5", 21, 999]];        // табл. 2, осадка конуса, см
+const BS_R = [["Р1", 0, 34], ["Р2", 35, 41], ["Р3", 42, 48], ["Р4", 49, 55], ["Р5", 56, 62], ["Р6", 63, 999]]; // табл. 1, расплыв, см
+function bsMark(v, L) { if (v == null) return null; const z = okr(v, 0); const m = L.find(([, a, b]) => z >= a && z <= b); return m ? m[0] : null; }
+/* ===== Керны асфальтобетона: ГОСТ Р 58406.2-2020 и 58406.1-2020 (ред. Изм. № 1), методы ГОСТ Р 58401.10, 58401.8 ===== */
+// t — пустоты в кернах при 3 местах и более (по типу смеси), s — для единичных измерений (1–2 места); третий элемент — верх для тротуаров
+const KR_L = {
+  osn: { name: "Слой основания", gost: "ГОСТ Р 58406.2-2020", s: [2.0, 8.0], types: Object.fromEntries(["А32ОТ", "А22ОТ", "А16ОТ", "А32ОН", "А22ОН", "А16ОН", "А32ОЛ", "А22ОЛ", "А16ОЛ"].map(k => [k, { t: [3.0, 8.0] }])) },
+  niz: { name: "Нижний слой покрытия", gost: "ГОСТ Р 58406.2-2020", s: [1.0, 7.0, 8.0], types: Object.fromEntries([...["А32НТ", "А22НТ", "А16НТ", "А32НН", "А22НН", "А16НН", "А11НН", "А22НЛ", "А16НЛ", "А11НЛ"].map(k => [k, { t: [2.0, 7.0] }]), ["А8НЛ", { t: [2.0, 8.0] }], ["А5НЛ", { t: [2.0, 8.0] }]]) },
+  verh: { name: "Верхний слой покрытия", gost: "ГОСТ Р 58406.2-2020", s: [1.0, 6.0, 8.0], types: Object.fromEntries([...["А22ВТ", "А16ВТ", "А11ВТ", "А22ВН", "А16ВН", "А11ВН", "А8ВН"].map(k => [k, { t: [2.0, 6.0] }]), ["А16ВЛ", { t: [1.5, 6.0] }], ["А11ВЛ", { t: [1.5, 6.0] }], ["А8ВЛ", { t: [1.5, 6.0, 8.0] }], ["А5ВЛ", { t: [1.5, 6.0, 8.0] }]]) },
+  shma: { name: "ЩМА (верхний слой)", gost: "ГОСТ Р 58406.1-2020", types: { "ЩМА-22": { t: [2.0, 6.0], s: [1.0, 6.0] }, "ЩМА-16": { t: [2.0, 6.0], s: [1.0, 6.0] }, "ЩМА-11": { t: [2.0, 5.5], s: [1.0, 5.5] }, "ЩМА-8": { t: [1.5, 5.5], s: [1.0, 5.5] } } },
+};
+const RHO_W = 0.997;
+function krK(a, b, c, h) { return { a, b, c, h }; }
+function bsPr(n) { return { n, nakl: "", vr: "", o1: "", o2: "", m1a: "", ma: "", m1b: "", mb: "", t1: "", t2: "", air: "" }; }
+function shpsNorms(c) {
+  return (SHPS[c] || SHPS["С5"])[2].split("|").map(x => { const [a, b] = x.split("-").map(Number); return [a, b ?? a]; });
+}
+const TESTS = {
+  les: { t: "Лещадность", full: "Содержание зёрен пластинчатой (лещадной) и игловатой формы", gost: "ГОСТ 33053-2014", col: "Масса зёрен пласт. и игл. формы, г" },
+  slab: { t: "Слабые породы", full: "Содержание зёрен слабых пород", gost: "ГОСТ 33054-2014", col: "Масса зёрен слабых пород, г" },
+  glina: { t: "Глина в комках", full: "Содержание глины в комках", gost: "ГОСТ 33026-2014", col: "Масса глины в комках, г" },
+};
+
+/* ===== ГОСТ 32703-2014 с Изм. № 1 и № 2 (2025): фракции (разд. 4), марки, нормы (разд. 5) ===== */
+const MAIN = [[4, 5.6], [5.6, 8], [8, 11.2], [11.2, 16], [16, 22.4], [22.4, 31.5], [31.5, 45], [45, 63], [63, 90]];
+const WIDE = [[4, 8], [5.6, 11.2], [8, 16], [11.2, 22.4], [16, 31.5], [22.4, 45], [31.5, 63], [45, 90]];
+const MIX = [[4, 16], [4, 22.4], [4, 31.5], [4, 45], [4, 63], [4, 90], [5.6, 22.4], [5.6, 31.5], [5.6, 45], [5.6, 63], [5.6, 90],
+  [8, 31.5], [8, 45], [8, 63], [8, 90], [11.2, 45], [11.2, 63], [11.2, 90], [16, 63], [16, 90], [22.4, 90]];
+const SIEVE_SET = [0.063, 0.125, 0.25, 0.5, 1, 2, 4, 5.6, 8, 11.2, 16, 22.4, 31.5, 45, 63, 90, 125];
+// марка по зерн. составу: [проход 1,4D от, проход D от, проход d до, проход d/2 до] (табл. 1)
+const ZS = { "90/10": [100, 90, 10, 2], "90/15": [98, 90, 15, 5], "90/20": [98, 90, 20, 5], "85/15": [98, 85, 15, 5], "85/20": [98, 85, 20, 5], "85/35": [98, 85, 35, 5] };
+const LES = { "Л10": 10, "Л15": 15, "Л20": 20, "Л25": 25, "Л30": 30, "Л35": 35, "Л50": 50 }; // табл. 2
+const DROB = ["М1400", "М1200", "М1000", "М800", "М600", "М400"];
+const PORODA = { izv: "Изверженные и метаморфические", grav: "Щебень из гравия и валунов", gravii: "Гравий", osad: "Осадочные породы" };
+const CFG0 = { frak: "4|8", zs: "90/10", poroda: "izv", les: "Л15", drob: "М1200" };
+
+function snap(x) { // ближайшее сито из ряда (п. 5.2)
+  if (x > 150) return Math.round(x * 10) / 10;
+  return SIEVE_SET.reduce((b, s) => Math.abs(Math.log(s / x)) < Math.abs(Math.log(b / x)) ? s : b);
+}
+function fracDD(c) { const [a, b] = String(c.frak || "").split("|").map(Number); return [a, b]; }
+function fracType(d, D) {
+  const is = L => L.some(([a, b]) => a === d && b === D);
+  return is(MAIN) ? "main" : is(WIDE) ? "wide" : is(MIX) ? "mix" : "other";
+}
+const TYPE_TXT = { main: "основная фракция", wide: "широкая фракция", mix: "смесь фракций", other: "фракции нет в ГОСТ 32703" };
+function normsFor(d, D, zs) {
+  const z = ZS[zs] || ZS["90/10"], t = fracType(d, D);
+  const rows = [[2 * D, 100, 100], [1.4 * D, z[0], 100], [D, z[1], 100]];
+  if (t === "wide") rows.push([D / 1.4, 25, 80]);
+  if (t === "mix") rows.push([D / 2, 20, 70]);
+  rows.push([d, 0, z[2]], [d / 2, 0, z[3]]);
+  const m = new Map();
+  for (const [x, mn, mx] of rows) {
+    const s = snap(x), k = key(s);
+    if (m.has(k)) { const o = m.get(k); o.mn = Math.max(o.mn, mn); o.mx = Math.min(o.mx, mx); }
+    else m.set(k, { s, mn, mx });
+  }
+  return { t, rows: [...m.values()].sort((a, b) => b.s - a.s) };
+}
+function cfgNorms(c) {
+  const mk = parseInt(String(c.drob).slice(1), 10) || 0;
+  return {
+    les_max: c.poroda === "gravii" ? 35 : LES[c.les],
+    slab_max: mk >= 1000 ? 5 : 10,
+    pyl_max: c.poroda === "osad" ? (mk >= 600 ? 2 : 3) : (mk >= 800 ? 1 : mk >= 600 ? 2 : 3),
+    glina_max: 0.25,
+  };
+}
+function lesMark(v) {
+  if (v == null) return "";
+  const z = okr(v, 1), e = Object.entries(LES).find(([, m]) => z <= m);
+  return e ? e[0] : "выше Л50";
+}
+
+function num(s) {
+  if (s == null) return null;
+  const t = String(s).trim().replace(",", ".");
+  if (t === "") return null;
+  const v = Number(t);
+  return Number.isFinite(v) ? v : null;
+}
+function okr(x, n = 1) {
+  const sign = x < 0 ? -1 : 1;
+  const v = Math.abs(parseFloat(x.toFixed(9)));
+  return sign * Number(Math.round(Number(v + "e" + n)) + "e-" + n);
+}
+function f(x, n = 1) { return x == null || !Number.isFinite(x) ? "—" : okr(x, n).toFixed(n).replace(".", ","); }
+function kr(x) { return x == null ? "—" : String(parseFloat(x.toFixed(3))).replace(".", ","); }
+function key(s) { return String(Math.round(s * 1000) / 1000); }
+function oc(v, mn, mx, n = 1) {
+  if (v == null || (mn == null && mx == null)) return "";
+  const z = okr(v, n);
+  return (mn == null || z >= mn) && (mx == null || z <= mx) ? "+" : "−";
+}
+function normText(mn, mx) {
+  if (mn == null && mx == null) return "—";
+  if (mn != null && mx != null) return mn === mx ? kr(mn) : kr(mn) + "–" + kr(mx);
+  return mx != null ? "до " + kr(mx) : "от " + kr(mn);
+}
+function mean(a) { a = a.filter(x => x != null); return a.length ? a.reduce((p, c) => p + c, 0) / a.length : null; }
+function esc(s) { return String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]); }
+
+/* ================= state ================= */
+function shDef(nomer, mark) {
+  return { lab: "Название лаборатории", zakl: "", nomer, mark, karer: "Карьер «Пример»", mesto: "Склад №1", data_otb: "02.11.2026", data_isp: "03.11.2026", fio: "Иванов И. И.", dolzh: "Лаборант" };
+}
+function fr(s, m1, x1) { return { s, m1, x1, m2: "", x2: "" }; }
+function defaults() {
+  return {
+    mat: "sheben",
+    pesok: {
+      sh: shDef("П-001", "0–5"),
+      z: { m_gr: "2000", o10: "4", o5: "25", w_m1: "3000", w_m2: "2920", m: "1000", "o_2.5": "60", "o_1.25": "130", "o_0.63": "330", "o_0.315": "320", "o_0.16": "130", o_dno: "28", p_m: "1000", p_m1: "985", n1_c: "1,2", n1_f: "2,75", n1_v: "0,001", n2_c: "1,2", n2_f: "2,74", n2_v: "0,001" },
+      glina: [fr("2,5", "50", "0,1"), fr("1,25", "100", "0,2")],
+      nr: { gr10_max: "5", gr5_max: "15", po063_min: "45", po063_max: "65", pr016_max: "15", pyl_max: "3", glina_max: "0,5", klass: "II", dopusk: "1" },
+    },
+    sheben: {
+      sh: shDef("Щ-001", "4–8"),
+      m: "2000",
+      sita: [{ s: "16", m: "0", mn: "100", mx: "100" }, { s: "11,2", m: "0", mn: "100", mx: "100" }, { s: "8", m: "40", mn: "90", mx: "100" }, { s: "5,6", m: "1200", mn: "25", mx: "80" }, { s: "4", m: "700", mn: "0", mx: "10" }, { s: "2", m: "30", mn: "0", mx: "2" }],
+      dno: "28",
+      frak: { les: [fr("5,6", "250", "30"), fr("4", "200", "20")], slab: [fr("5,6", "250", "5"), fr("4", "200", "4")], glina: [fr("5,6", "250", "0"), fr("4", "200", "0")] },
+      pyl: [{ do: "2000", po: "1970" }, { do: "", po: "" }],
+      nr: { les_max: "", slab_max: "5", glina_max: "", pyl_max: "", dopusk: "1" },
+    },
+    otsev: {
+      gost: "31424",
+      sh: shDef("О-001", "0–5"),
+      z: { m_gr: "2000", o10: "4", o5: "25", w_m1: "3000", w_m2: "2920", m: "1000", "o_2.5": "60", "o_1.25": "130", "o_0.63": "330", "o_0.315": "320", "o_0.16": "130", o_dno: "28", p_m: "1000", p_m1: "985", n1_c: "", n1_f: "", n1_v: "", n2_c: "", n2_f: "", n2_v: "" },
+      glina: [fr("2,5", "50", "0,1"), fr("1,25", "100", "0,2")],
+      nr: { gr10_max: "", gr5_max: "", po063_min: "", po063_max: "", pr016_max: "", pyl_max: "", glina_max: "", klass: "", dopusk: "1" },
+      cfg: { klass: "I", gruppa: "auto", asf: "0" },
+      r: { klass: "II", m: "2000", o8: "0", o4: "60", mm: "1000", mw: "985", "o_2": "150", "o_1": "210", "o_0.5": "250", "o_0.25": "200", "o_0.125": "140", dno: "35", gm: "500", gx: "0,5", w1: "", w2: "" },
+    },
+    shps: {
+      sh: shDef("С-001", "С5"),
+      smes: "С5",
+      m: "20000", o: { "120": "0", "80": "0", "40": "600", "20": "6000", "10": "3400", "5": "2000" },
+      pm: "1000", po: { "2.5": "200", "0.63": "350", "0.16": "250" },
+      p1d: "2000", p1p: "1990", p2d: "1000", p2p: "950",
+      g1m: "", g1x: "", g2m: "", g2x: "", lm: "", lx: "",
+    },
+    obr: {
+      sh: { ...shDef("Б-001", "БСТ В25 П4"), karer: "Бетонный завод «Пример»", mesto: "Объект «Пример», плита перекрытия", data_otb: "06.10.2026", data_isp: "03.11.2026" },
+      klass: "25", forma: "k100", naz: "smes", proc: "100",
+      ser: [
+        { p: "1", a: "", b: "", h: "", s: [obrS("345", "2380"), obrS("352", "2395"), obrS("338", "2372")] },
+        { p: "2", a: "", b: "", h: "", s: [obrS("350", "2401"), obrS("360", "2410"), obrS("341", "2388")] },
+      ],
+    },
+    bsm: {
+      sh: { ...shDef("БС-001", "БСТ В25 П4 F150 W6"), karer: "Бетонный завод «Пример»", mesto: "Объект «Пример», плита перекрытия", data_otb: "03.11.2026", data_isp: "03.11.2026" },
+      tip: "P", mark: "П4", oz: "", rz: "2400", tz: "", pz: "", V: "1000",
+      pr: [{ ...bsPr("1"), nakl: "1254", vr: "09:40", o1: "18", o2: "19", m1a: "1200", ma: "3600", m1b: "1205", mb: "3590", t1: "18", t2: "17" }],
+    },
+    kern: {
+      sh: { ...shDef("К-001", "А16ВН"), karer: "АБЗ «Пример»", mesto: "Автодорога «Пример», км 12", data_otb: "02.11.2026", data_isp: "03.11.2026" },
+      sloy: "verh", tip: "А16ВН", tro: "0", gmm: "2,520", hpr: "5",
+      mesta: [
+        { n: "ПК 12+50, правая полоса", k: [krK("1450,2", "1455,8", "850,1", "5,2")] },
+        { n: "ПК 13+80, левая полоса", k: [krK("1502,4", "1506,0", "885,3", "5,4")] },
+        { n: "ПК 15+10, правая полоса", k: [krK("1388,0", "1392,5", "818,0", "4,9")] },
+      ],
+    },
+  };
+}
+const TG = window.Telegram && Telegram.WebApp && Telegram.WebApp.initData ? Telegram.WebApp : null;
+// LOCAL: открыто не из бота (сайт /app/, файл на компе) — бланк и журнал хранятся на этом устройстве
+const LOCAL = !TG && !window.LAB_API;
+let S;
+function useState(o) {
+  S = o && o.pesok && o.sheben ? o : defaults();
+  if (!S.sheben.cfg) { S.sheben.cfg = { ...CFG0 }; applyCfg(false); }
+  if (!S.pesok.cfg) S.pesok.cfg = { ...PCFG0 };
+  const D0 = defaults();
+  for (const k of ["otsev", "shps", "obr", "bsm", "kern"]) if (!S[k]) S[k] = D0[k];
+  if (!MAT[S.mat]) S.mat = "pesok";
+}
+try { useState(JSON.parse(localStorage.getItem(STORE))); } catch (e) { useState(null); }
+function applyCfg(sitaToo, keepMass) {
+  const T = S.sheben, c = T.cfg, [d, D] = fracDD(c);
+  if (sitaToo && d > 0 && D > d) {
+    const old = new Map(keepMass ? T.sita.map(r => [key(num(r.s) ?? -1), r.m]) : []);
+    if (!keepMass) T.dno = "";
+    T.sita = normsFor(d, D, c.zs).rows.map(r => ({ s: kr(r.s), m: old.get(key(r.s)) ?? "", mn: String(r.mn), mx: String(r.mx) }));
+    T.sh.mark = kr(d) + "–" + kr(D);
+  }
+  const n = cfgNorms(c);
+  for (const k in n) T.nr[k] = n[k] == null ? "" : kr(n[k]);
+}
+function save() {
+  try { localStorage.setItem(STORE, JSON.stringify(S)); } catch (e) { }
+  if (TG) { clearTimeout(cloudT); cloudT = setTimeout(cloudSave, 800); }
+}
+/* В Telegram черновик хранится в облаке бота (CloudStorage): значения до 4096 символов, поэтому режем на куски. */
+let cloudT, cloudReady = false;
+const CS = () => TG && TG.CloudStorage && TG.isVersionAtLeast && TG.isVersionAtLeast("6.9") ? TG.CloudStorage : null;
+function cloudSave() {
+  const cs = CS(); if (!cs || !cloudReady) return;
+  const s = JSON.stringify(S), n = Math.ceil(s.length / 4000);
+  if (n > 40) return;
+  for (let i = 0; i < n; i++) cs.setItem("s" + i, s.slice(i * 4000, (i + 1) * 4000));
+  cs.setItem("sn", String(n));
+}
+function cloudLoad() {
+  const cs = CS(); if (!cs) return;
+  cs.getItem("sn", (err, v) => {
+    const n = parseInt(v, 10);
+    if (err || !(n > 0 && n <= 40)) { cloudReady = true; cloudSave(); return; }
+    cs.getItems(Array.from({ length: n }, (_, i) => "s" + i), (e2, vals) => {
+      cloudReady = true;
+      if (e2 || !vals) return;
+      try { useState(JSON.parse(Array.from({ length: n }, (_, i) => vals["s" + i] || "").join(""))); render(); } catch (e) { }
+    });
+  });
+}
+function getP(path) { return path.split("/").reduce((o, k) => (o == null ? o : o[k]), S); }
+function setP(path, v) { const ks = path.split("/"); const last = ks.pop(); const o = ks.reduce((a, k) => a[k], S); o[last] = v; }
+
+/* ================= calculations ================= */
+function frac(rows, cho, sieves) {
+  const out = []; let sum = 0, sw = 0, noWeight = false;
+  for (const r of rows) {
+    const s = num(r.s); if (s == null) continue;
+    const pr = [];
+    [[r.m1, r.x1], [r.m2, r.x2]].forEach(([m, x], i) => {
+      const mm = num(m), xx = num(x);
+      if (mm > 0 && xx != null) pr.push({ i: i + 1, m: mm, x: xx, p: xx / mm * 100 });
+    });
+    const up = sieves.filter(v => v > s + 1e-9);
+    const nazv = up.length ? kr(Math.min(...up)) + "–" + kr(s) : "св. " + kr(s);
+    if (!pr.length) { out.push({ nazv, pr, sr: null }); continue; }
+    const sr = mean(pr.map(p => p.p));
+    const w = cho[key(s)];
+    if (w == null) noWeight = true; else { sum += sr * w; sw += w; }
+    out.push({ nazv, pr, sr, w });
+  }
+  const done = out.filter(o => o.sr != null);
+  let sv = null;
+  if (done.length) sv = !noWeight && sw > 0 ? sum / sw : mean(done.map(o => o.sr));
+  return { rows: out, sv, noWeight: noWeight && done.length > 0 };
+}
+
+function calcPesok(P, kind = "pesok") {
+  const z = k => num(P.z[k]), nr = k => num(P.nr[k]);
+  const R = { warn: [], cho: {}, po: {} };
+  const mgr = z("m_gr"), o10 = z("o10"), o5 = z("o5");
+  if (mgr > 0 && o10 != null && o5 != null) {
+    R.cho10 = o10 / mgr * 100; R.cho5 = o5 / mgr * 100; R.po10 = R.cho10; R.po5 = R.cho10 + R.cho5;
+  }
+  const w1 = z("w_m1"), w2 = z("w_m2");
+  if (w1 != null && w2 > 0) { R.W = (w1 - w2) / w2 * 100; if (w2 > w1) R.warn.push("Влажность: масса после сушки больше, чем до."); }
+  const m = z("m");
+  if (m > 0) {
+    let acc = 0, all = true;
+    for (const s of SAND) {
+      const o = z("o_" + s); if (o == null) { all = false; continue; }
+      R.cho[key(s)] = o / m * 100;
+      if (all) { acc += o / m * 100; R.po[key(s)] = acc; }
+    }
+    if (all) {
+      R.Mk = SAND.reduce((a, s) => a + R.po[key(s)], 0) / 100;
+      R.prohod = 100 - R.po[key(0.16)];
+      const d = z("o_dno");
+      if (d != null) {
+        R.cho_dno = d / m * 100; R.po_dno = acc + R.cho_dno;
+        const sum = SAND.reduce((a, s) => a + z("o_" + s), 0) + d;
+        R.poteri = (m - sum) / m * 100;
+        const dop = nr("dopusk");
+        if (dop != null && Math.abs(R.poteri) > dop) R.warn.push(`Сумма остатков (${kr(sum)} г) отличается от навески (${kr(m)} г) на ${f(Math.abs(R.poteri))} %. Проверь взвешивания.`);
+      }
+    }
+  }
+  const pm = z("p_m"), pm1 = z("p_m1");
+  if (pm > 0 && pm1 != null) R.pyl = (pm - pm1) / pm * 100;
+  R.glina = frac(P.glina, R.cho, [10, 5, ...SAND]);
+  R.plotn = [];
+  for (const i of [1, 2]) {
+    const c = z(`n${i}_c`), fl = z(`n${i}_f`), v = z(`n${i}_v`);
+    if (c != null && fl != null && v > 0) R.plotn.push({ i, c, f: fl, v, ro: (fl - c) / v });
+  }
+  R.plotn_sr = mean(R.plotn.map(p => p.ro));
+  R.N = sandNorms(P, R.Mk, SANDT[kind]); R.group = R.N.group; R.warn.push(...R.N.warn);
+  return R;
+}
+
+function sievesOf(T) {
+  return T.sita.map((r, idx) => ({ idx, s: num(r.s), m: num(r.m), mn: num(r.mn), mx: num(r.mx) }))
+    .filter(r => r.s != null).sort((a, b) => b.s - a.s);
+}
+function calcSheben(T) {
+  const R = { warn: [], cho: {}, rs: {} };
+  const m = num(T.m), sita = sievesOf(T);
+  R.sita = sita;
+  if (m > 0 && sita.length) {
+    let acc = 0, ok = true, any = false;
+    for (const r of sita) {
+      const a = (r.m ?? 0) / m * 100; acc += a;
+      const pp = 100 - acc, v = oc(pp, r.mn, r.mx);
+      if (v === "−") ok = false;
+      if (v) any = true;
+      R.rs[r.idx] = { a, po: acc, pp, v };
+      R.cho[key(r.s)] = a;
+    }
+    const d = num(T.dno) ?? 0;
+    R.dno = { a: d / m * 100, po: acc + d / m * 100 };
+    R.ok = any ? ok : null;
+    const sum = sita.reduce((p, r) => p + (r.m ?? 0), 0) + d;
+    R.poteri = (m - sum) / m * 100;
+    const dop = num(T.nr.dopusk);
+    if (dop != null && Math.abs(R.poteri) > dop) R.warn.push(`Сумма остатков (${kr(sum)} г) отличается от массы пробы (${kr(m)} г) на ${f(Math.abs(R.poteri))} %. Проверь взвешивания.`);
+  }
+  const all = sita.map(r => r.s);
+  R.frak = {};
+  for (const t in TESTS) R.frak[t] = frac(T.frak[t], R.cho, all);
+  R.pyl = [];
+  T.pyl.forEach((p, i) => {
+    const d = num(p.do), po = num(p.po);
+    if (d > 0 && po != null) { R.pyl.push({ i: i + 1, d, po, p: (d - po) / d * 100 }); if (po > d) R.warn.push(`Пылевидные, проба ${i + 1}: масса после промывки больше, чем до.`); }
+  });
+  R.pyl_sr = mean(R.pyl.map(p => p.p));
+  return R;
+}
+
+/* ================= view ================= */
+const view = document.getElementById("view");
+function idOf(path) { return "i-" + path.replace(/[^A-Za-z0-9_-]/g, "_"); }
+function inp(path, label, opt = {}) {
+  const v = getP(path) ?? "";
+  const type = opt.text ? "text" : "text";
+  const mode = opt.text ? "text" : "decimal";
+  const lab = label ? `<span>${label}</span>` : "";
+  const field = `<input type="${type}" inputmode="${mode}" autocomplete="off" id="${idOf(path)}" data-k="${path}" value="${esc(v)}"${opt.aria ? ` aria-label="${esc(opt.aria)}"` : ""}>`;
+  return label ? `<label class="f">${lab}${field}</label>` : field;
+}
+function sec(title, gost, body, open = true) {
+  return `<details class="sec"${open ? " open" : ""}><summary><span class="sec-t">${title}</span>${gost ? `<span class="sec-g">${gost}</span>` : ""}</summary><div class="body">${body}</div></details>`;
+}
+const SH_LBL0 = { mark: "Маркировка", karer: "Карьер (исходный материал)", mesto: "Место отбора пробы", data_otb: "Дата отбора пробы" };
+const SH_LBL = { kern: { mark: "Тип смеси", karer: "Поставщик смеси (АБЗ)", mesto: "Объект, участок", data_otb: "Дата отбора кернов" }, bsm: { mark: "Марка смеси (по документу о качестве)", karer: "Поставщик (завод)", mesto: "Объект, конструкция", data_otb: "Дата отбора пробы" }, obr: { mark: "Марка бетонной смеси", karer: "Поставщик (завод)", mesto: "Объект, конструкция", data_otb: "Дата изготовления образцов" } };
+const shl = (m, k) => (SH_LBL[m] || SH_LBL0)[k];
+/* Шапка — строка-ссылка; поля открываются в шторке (их заполняют редко). */
+const ICON_DOC = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 1.5H4a1.5 1.5 0 0 0-1.5 1.5v10A1.5 1.5 0 0 0 4 14.5h8a1.5 1.5 0 0 0 1.5-1.5V5.5z"/><path d="M9.5 1.5v4h4M5.5 8.5h5M5.5 11h3.5"/></svg>';
+function shapka(m) {
+  const h = S[m].sh;
+  const sub = [h.nomer && "№ " + h.nomer, h.data_isp, h.fio].filter(Boolean).map(esc).join(" · ") || "Лаборатория, номер, даты, исполнитель";
+  return `<button type="button" class="row-link" data-act="shapka" data-m="${m}"><span class="ico" aria-hidden="true">${ICON_DOC}</span><span class="tx"><b>Шапка протокола</b><small>${sub}</small></span></button>`;
+}
+function shapkaFields(m) {
+  const p = m + "/sh/";
+  return `<div class="fields sheet-card">
+    ${inp(p + "lab", "Лаборатория", { text: 1 })}${inp(p + "nomer", "Номер протокола", { text: 1 })}
+    ${inp(p + "mark", shl(m, "mark"), { text: 1 })}${inp(p + "karer", shl(m, "karer"), { text: 1 })}
+    ${inp(p + "mesto", shl(m, "mesto"), { text: 1 })}${inp(p + "data_otb", shl(m, "data_otb"), { text: 1 })}
+    ${inp(p + "data_isp", "Дата испытания", { text: 1 })}${inp(p + "fio", "Испытание провёл (ФИО)", { text: 1 })}
+    ${inp(p + "dolzh", "Должность", { text: 1 })}${inp(p + "zakl", "Заключение о состоянии измерений", { text: 1 })}
+  </div>`;
+}
+function toolbar() {
+  return `<div class="toolbar"><p class="hint">Пример: в полях стоят выдуманные цифры. Всё считается при вводе.</p>
+    <button type="button" class="btn danger" id="btn-clear" data-act="clear">Очистить замеры</button></div>
+    <div class="warn" id="o-warn" hidden></div>`;
+}
+
+const cap = s => s[0].toUpperCase() + s.slice(1);
+const OTS_GOST = [["31424", "ГОСТ 31424 (отсевы, сита 10…0,16)"], ["32730", "ГОСТ 32730 (дороги, сита 8…0,125)"]];
+function viewSand(m = "pesok") {
+  const z = m + "/z/", T = SANDT[m], P = S[m], gs = T.gost.replace(/-\d+$/, "");
+  const gr = [[10, "o10"], [5, "o5"]].map(([s, k]) => `<div class="s">${s}</div>${inp(z + k, "", { aria: `Остаток на сите ${s} мм, г` })}<output id="g-cho-${s}"></output><output id="g-po-${s}"></output>`).join("");
+  const rs = SAND.map((s, i) => `<div class="s">${kr(s)}</div>${inp(z + "o_" + s, "", { aria: `Остаток на сите ${kr(s)} мм, г` })}<output id="r-cho-${i}"></output><output id="r-po-${i}"></output>`).join("");
+  const gl = P.glina.map((r, i) => fracBlock(m + "/glina/" + i, r, "Масса глины", false, `gl-${i}`)).join("");
+  const pl = [1, 2].map(i => `<div class="fields">${inp(`${z}n${i}_c`, `Проба ${i}: цилиндр, кг`)}${inp(`${z}n${i}_f`, `Цилиндр + песок, кг`)}${inp(`${z}n${i}_v`, `Объём, м³`)}</div><div class="res">Проба ${i}: <b id="o-ro-${i}">—</b> кг/м³</div>`).join("");
+  const n = m + "/nr/", pc = m + "/cfg/", c = P.cfg, manual = c.klass === "manual";
+  const cfg = sec("Класс и группа", gs, `<div class="fields">
+      ${m === "otsev" ? sel("otsev/gost", "Стандарт", OTS_GOST) : ""}
+      ${sel(pc + "klass", "Класс песка", [["I", "Класс I"], ["II", "Класс II"], ["manual", "Свои нормы (вручную)"]])}
+      ${manual ? "" : sel(pc + "gruppa", "Группа", [["auto", "Авто — по Мк"], ...T.GR.map(g => [g[0], cap(g[0])])])}
+      ${manual || !T.asf ? "" : sel(pc + "asf", "Назначение", [["0", "Обычное"], ["1", "Для асфальтобетона (0,16 не нормир.)"]])}
+    </div><div class="cfg-info" id="o-pcfg">—</div>`);
+  const own = manual ? sec("Свои нормы", "ручной ввод", `<div class="fields">
+      ${inp(n + "gr10_max", "Сито 10: П.О. не более, %")}${inp(n + "gr5_max", "Сито 5: П.О. не более, %")}
+      ${inp(n + "po063_min", "Сито 0,63: П.О. от, %")}${inp(n + "po063_max", "Сито 0,63: П.О. до, %")}
+      ${inp(n + "pr016_max", "Проход 0,16 не более, %")}${inp(n + "pyl_max", "Пылевидные не более, %")}
+      ${inp(n + "glina_max", "Глина в комках не более, %")}${inp(n + "klass", "Класс песка", { text: 1 })}</div>`, true) : "";
+  return toolbar() + cfg + own + shapka(m) +
+    sec("1. Зерновой состав: сита 10 и 5", "ГОСТ 8735", `
+      <div class="fields">${inp(z + "m_gr", "Масса пробы m, г")}</div>
+      <div class="grid g3"><div class="h">Сито</div><div class="h">Масса, г</div><div class="h">Ч.О.</div><div class="h">П.О.</div>${gr}</div>
+      <div class="res">Требования ${gs}: сито 10 — <b id="o-g10">—</b>; сито 5 — <b id="o-g5">—</b></div>`) +
+    sec("Влажность", "ГОСТ 8735", `<div class="fields">${inp(z + "w_m1", "m1 — влажная проба, г")}${inp(z + "w_m2", "m2 — после сушки, г")}</div>
+      <div class="res">W = <b id="o-w">—</b> %</div>`) +
+    sec("Зерновой состав песка", "ГОСТ 8735", `
+      <div class="fields">${inp(z + "m", "Масса навески m, г")}</div>
+      <div class="grid g3"><div class="h">Сито</div><div class="h">Масса, г</div><div class="h">Ч.О.</div><div class="h">П.О.</div>${rs}
+        <div class="s">менее</div>${inp(z + "o_dno", "", { aria: "Прошло через сито 0,16, г" })}<output id="r-cho-dno"></output><output id="r-po-dno"></output></div>
+      <div class="res">Мк = <b id="o-mk">—</b> · <span id="o-group">—</span></div>
+      <div class="res">Сито 0,63: <b id="o-063">—</b> · проход 0,16: <b id="o-016">—</b> · расхождение <b id="o-pot">—</b> %</div>`) +
+    sec("2. Пылевидные и глинистые частицы", "ГОСТ 8735", `<div class="fields">${inp(z + "p_m", "Масса пробы, г")}${inp(z + "p_m1", "После промывки и сушки, г")}</div>
+      <div class="res">Результат: <b id="o-pyl">—</b> % <span id="o-pyl-v"></span></div>`) +
+    sec("3. Глина в комках", "ГОСТ 8735", gl + `<div class="res">Средневзвешенное: <b id="o-gl-sv">—</b> % <span id="o-gl-v"></span></div>`) +
+    sec("4. Насыпная плотность", "ГОСТ 8735", pl + `<div class="res">Среднее: <b id="o-ro">—</b> кг/м³</div>`) +
+    sec("Допуск", "", `<div class="fields">${inp(n + "dopusk", "Допуск расхождения масс, %")}</div>`, false);
+}
+
+function fracBlock(path, r, what, removable, oid) {
+  return `<div class="frac"><div class="frac-h">${inp(path + "/s", "", { aria: "Нижнее сито фракции, мм" })}<span>мм → фракция <b id="${oid}-n">—</b></span>
+    ${removable ? `<button type="button" class="btn x" data-act="del-frak" data-p="${path}" aria-label="Убрать фракцию">✕</button>` : ""}</div>
+    <div class="fields">${inp(path + "/m1", "Масса пробы 1, г")}${inp(path + "/x1", what + " 1, г")}${inp(path + "/m2", "Масса пробы 2, г")}${inp(path + "/x2", what + " 2, г")}</div>
+    <div class="res">По фракции: <b id="${oid}-r">—</b> %</div></div>`;
+}
+
+function sel(path, label, list) {
+  const cur = String(getP(path) ?? "");
+  const o = list.map(([v, t]) => `<option value="${esc(v)}"${String(v) === cur ? " selected" : ""}>${esc(t)}</option>`).join("");
+  return `<label class="f"><span>${label}</span><select id="${idOf(path)}" data-k="${path}" data-cfg="1">${o}</select></label>`;
+}
+function cfgSec() {
+  const T = S.sheben, c = T.cfg, p = "sheben/cfg/";
+  const fl = ([a, b]) => kr(a) + "–" + kr(b);
+  const fracs = [...MAIN.map(x => [x.join("|"), fl(x) + " мм · основная"]),
+    ...WIDE.map(x => [x.join("|"), fl(x) + " мм · широкая"]), ...MIX.map(x => [x.join("|"), fl(x) + " мм · смесь"])];
+  const [d, D] = fracDD(c), ok = d > 0 && D > d;
+  const nn = cfgNorms(c);
+  const info = !ok ? `<div class="cfg-info"><span class="v-minus">Верхний размер D должен быть больше нижнего d.</span></div>` :
+    `<div class="cfg-info"><span>${kr(d)}–${kr(D)} мм: ${TYPE_TXT[fracType(d, D)]}. Сита: <b>${normsFor(d, D, c.zs).rows.map(r => kr(r.s)).join(" · ")}</b></span>
+     <span>Нормы: лещадность до <b>${kr(nn.les_max)}</b> · слабые до <b>${kr(nn.slab_max)}</b> · пыль до <b>${kr(nn.pyl_max)}</b> · глина до <b>${kr(nn.glina_max)}</b> %</span></div>`;
+  return sec("Фракция и марки", "ГОСТ 32703", `
+    <div class="fields">
+      ${sel(p + "frak", "Фракция", fracs)}
+      ${sel(p + "zs", "Марка по зерновому составу", Object.keys(ZS).map(k => [k, k]))}
+      ${sel(p + "poroda", "Порода", Object.entries(PORODA))}
+      ${c.poroda === "gravii" ? "" : sel(p + "les", "Марка по лещадности", Object.keys(LES).map(k => [k, `${k} (до ${LES[k]} %)`]))}
+      ${sel(p + "drob", "Марка по дробимости", DROB.map(k => [k, k]))}
+    </div>${info}
+    <p class="hint">Сита и нормы подставляются сами. Поправить вручную можно внизу в «Сита и нормы», но смена фракции или марки перезапишет правки.</p>`);
+}
+
+function viewSheben() {
+  const T = S.sheben, p = "sheben/";
+  const order = T.sita.map((r, idx) => ({ idx, s: num(r.s) })).sort((a, b) => (b.s ?? -1) - (a.s ?? -1));
+  const rs = order.map(({ idx }) => `<div class="s">${esc(T.sita[idx].s || "?")}</div>${inp(`${p}sita/${idx}/m`, "", { aria: `Остаток на сите ${T.sita[idx].s} мм, г` })}<output id="s-cho-${idx}"></output><output id="s-po-${idx}"></output><output id="s-pp-${idx}"></output>`).join("");
+  const tests = Object.entries(TESTS).map(([t, d]) => sec(d.t, d.gost,
+    T.frak[t].map((r, i) => fracBlock(`${p}frak/${t}/${i}`, r, t === "glina" ? "Масса глины" : "Масса зёрен", true, `f-${t}-${i}`)).join("") +
+    `<button type="button" class="btn ghost" data-act="add-frak" data-t="${t}">+ Фракция</button>
+     <div class="res">Средневзвешенное: <b id="o-${t}-sv">—</b> % <span id="o-${t}-v"></span>${t === "les" ? ` <span id="o-les-m"></span>` : ""}</div>`, true)).join("");
+  const pyl = T.pyl.map((q, i) => `<div class="fields">${inp(`${p}pyl/${i}/do`, `Проба ${i + 1}: до промывки, г`)}${inp(`${p}pyl/${i}/po`, `После промывки, г`)}</div>`).join("");
+  const norms = T.sita.map((r, i) => `${inp(`${p}sita/${i}/s`, "", { aria: "Сито, мм" })}${inp(`${p}sita/${i}/mn`, "", { aria: "Норма прохода от, %" })}${inp(`${p}sita/${i}/mx`, "", { aria: "Норма прохода до, %" })}<button type="button" class="btn x" data-act="del-sito" data-i="${i}" aria-label="Убрать сито">✕</button>`).join("");
+  const n = p + "nr/";
+  return toolbar() + cfgSec() + shapka("sheben") +
+    sec("Зерновой состав", "ГОСТ 33029", `
+      <div class="fields">${inp(p + "m", "Масса пробы, г")}</div>
+      <div class="grid g4"><div class="h">Сито</div><div class="h">Масса, г</div><div class="h">Ч.О.</div><div class="h">П.О.</div><div class="h">П.П.</div>${rs}
+        <div class="s">менее</div>${inp(p + "dno", "", { aria: "Менее наименьшего сита, г" })}<output id="s-cho-dno"></output><output id="s-po-dno"></output><output></output></div>
+      <div class="res"><span id="o-sost">—</span> · расхождение <b id="o-pot">—</b> %</div>`) +
+    tests +
+    sec("Пылевидные и глинистые частицы", "ГОСТ 33055", pyl + `<div class="res">Проба 1: <b id="o-p1">—</b> % · проба 2: <b id="o-p2">—</b> % · среднее <b id="o-psr">—</b> % <span id="o-p-v"></span></div>`) +
+    sec("Сита и нормы", "ручная правка", `
+      <p class="hint">Норма — полный проход, %. Пустая клетка значит «без оценки».</p>
+      <div class="norms"><span class="h">Сито, мм</span><span class="h">Проход от, %</span><span class="h">Проход до, %</span><span></span>${norms}</div>
+      <button type="button" class="btn ghost" data-act="add-sito">+ Сито</button>
+      <div class="fields">${inp(n + "les_max", "Лещадность не более, %")}${inp(n + "slab_max", "Слабые породы не более, %")}
+        ${inp(n + "glina_max", "Глина в комках не более, %")}${inp(n + "pyl_max", "Пылевидные не более, %")}${inp(n + "dopusk", "Допуск расхождения масс, %")}</div>`, false);
+}
+
+/* ===== Отсев по ГОСТ 32730 (дороги): сита 8 и 4, мерная проба на 2…0,125 по ГОСТ 32727 ===== */
+function viewRoad() {
+  const p = "otsev/r/";
+  const gr = [[8, "o8"], [4, "o4"]].map(([s, k]) => `<div class="s">${s}</div>${inp(p + k, "", { aria: `Остаток на сите ${s} мм, г` })}<output id="q-cho-${s}"></output><output id="q-po-${s}"></output>`).join("");
+  const rs = RD_SITA.map((s, i) => `<div class="s">${kr(s)}</div>${inp(p + "o_" + s, "", { aria: `Остаток на сите ${kr(s)} мм, г` })}<output id="r-cho-${i}"></output><output id="r-po-${i}"></output>`).join("");
+  return toolbar() +
+    sec("Класс и группа", "ГОСТ 32730", `<div class="fields">${sel("otsev/gost", "Стандарт", OTS_GOST)}${sel(p + "klass", "Класс песка", [["I", "Класс I"], ["II", "Класс II"]])}</div>
+      <div class="cfg-info" id="o-pcfg">—</div>
+      <p class="hint">Нормы по ГОСТ 32730-2014 (изд. 2019). Изменение № 1 от 2025 г. ещё не сверено.</p>`) +
+    shapka("otsev") +
+    sec("1. Зёрна крупнее 8 и 4 мм", "ГОСТ 32727", `<div class="fields">${inp(p + "m", "Масса лабораторной пробы, г")}</div>
+      <div class="grid g3"><div class="h">Сито</div><div class="h">Масса, г</div><div class="h">Ч.О.</div><div class="h">П.О.</div>${gr}</div>
+      <div class="res">Св. 8 мм: <b id="q-8">—</b> · св. 4 мм: <b id="q-4">—</b></div>`) +
+    sec("Влажность", "ГОСТ 32768", `<div class="fields">${inp(p + "w1", "m1 — влажная проба, г")}${inp(p + "w2", "m2 — после сушки, г")}</div><div class="res">W = <b id="o-w">—</b> %</div>`) +
+    sec("2. Пылевидные и глинистые частицы", "ГОСТ 32725", `<div class="fields">${inp(p + "mm", "Мерная проба (прошло 4 мм), г")}${inp(p + "mw", "После промывки и сушки, г")}</div>
+      <div class="res">Результат: <b id="o-pyl">—</b> % <span id="o-pyl-v"></span></div>`) +
+    sec("3. Зерновой состав мерной пробы", "ГОСТ 32727", `<p class="hint">Сеешь промытую пробу. Отмытая пыль сама добавится к поддону.</p>
+      <div class="grid g3"><div class="h">Сито</div><div class="h">Масса, г</div><div class="h">Ч.О.</div><div class="h">П.О.</div>${rs}
+        <div class="s">поддон</div>${inp(p + "dno", "", { aria: "Поддон после промывки, г" })}<output id="r-cho-dno"></output><output id="r-po-dno"></output></div>
+      <div class="res">Мк = <b id="o-mk">—</b> · <span id="o-group">—</span></div>
+      <div class="res">Сито 0,5: <b id="o-05">—</b> · менее 0,125: <b id="o-0125">—</b> · расхождение <b id="o-pot">—</b> %</div>`) +
+    sec("4. Глина в комках", "ГОСТ 32726", `<div class="fields">${inp(p + "gm", "Масса пробы, г")}${inp(p + "gx", "Масса глины в комках, г")}</div>
+      <div class="res">Результат: <b id="o-gl-sv">—</b> % <span id="o-gl-v"></span></div>`) +
+    sec("Допуск", "", `<div class="fields">${inp("otsev/nr/dopusk", "Допуск расхождения масс, %")}</div>`, false);
+}
+function calcRoad(O) {
+  const r = O.r, z = k => num(r[k]), R = { warn: [], cho: {}, po: {} };
+  const m = z("m"), o8 = z("o8"), o4 = z("o4");
+  if (m > 0 && o8 != null && o4 != null) { R.p8 = o8 / m * 100; R.p48 = o4 / m * 100; R.p4 = R.p8 + R.p48; }
+  const w1 = z("w1"), w2 = z("w2"); if (w1 != null && w2 > 0) R.W = (w1 - w2) / w2 * 100;
+  const mm = z("mm"), mw = z("mw");
+  if (mm > 0 && mw != null) { R.pyl = (mm - mw) / mm * 100; if (mw > mm) R.warn.push("Пылевидные: масса после промывки больше, чем до."); }
+  if (mm > 0) {
+    let acc = 0, all = true;
+    for (const s of RD_SITA) {
+      const o = z("o_" + s); if (o == null) { all = false; continue; }
+      R.cho[key(s)] = o / mm * 100;
+      if (all) { acc += o / mm * 100; R.po[key(s)] = acc; }
+    }
+    if (all) {
+      R.Mk = RD_SITA.reduce((a, s) => a + R.po[key(s)], 0) / 100;
+      const d = z("dno") ?? 0, lost = mw != null && mw <= mm ? mm - mw : 0;
+      R.cho_dno = (d + lost) / mm * 100; R.po_dno = acc + R.cho_dno;
+      const sum = RD_SITA.reduce((a, s) => a + z("o_" + s), 0) + d + lost;
+      R.poteri = (mm - sum) / mm * 100;
+      const dop = num(O.nr.dopusk);
+      if (dop != null && Math.abs(R.poteri) > dop) R.warn.push(`Сумма остатков с пылью (${kr(sum)} г) отличается от мерной пробы (${kr(mm)} г) на ${f(Math.abs(R.poteri))} %. Проверь взвешивания.`);
+    }
+  }
+  const gm = z("gm"), gx = z("gx"); if (gm > 0 && gx != null) R.glina = gx / gm * 100;
+  const kl = r.klass === "I" ? "I" : "II";
+  R.group = R.Mk != null ? sandGroup(R.Mk, RD_GR, 1) : null;
+  if (R.Mk != null && !R.group) R.warn.push(`Мк ${f(R.Mk, 1)} меньше 1,8: такой группы в ГОСТ 32730 нет.`);
+  const g = RD_GR.find(x => x[0] === R.group), t = R.group ? RD_N[kl][R.group] : null;
+  R.N = { po05_min: g ? g[3] : null, po05_max: g ? g[4] : null, p8_max: t ? t[0] : null, p4_max: t ? t[1] : null, p0125_max: t ? t[2] : null, pyl_max: RD_PG[kl][0], glina_max: RD_PG[kl][1] };
+  R.kl = kl;
+  return R;
+}
+function refreshRoad() {
+  const R = calcRoad(S.otsev), N = R.N, nt = (mx, mn = null) => normText(mn, mx);
+  put("o-pcfg", (R.group ? `Группа: ${R.group} (по Мк)` : R.Mk == null ? "Группа определится по Мк" : "Группа: вне ГОСТ") +
+    ` · нормы: св. 8 ${nt(N.p8_max)} · св. 4 ${nt(N.p4_max)} · 0,5: ${nt(N.po05_max, N.po05_min)} · менее 0,125 ${nt(N.p0125_max)} · пыль ${nt(N.pyl_max)} · глина ${nt(N.glina_max)} %`);
+  put("q-cho-8", f(R.p8)); put("q-po-8", f(R.p8)); put("q-cho-4", f(R.p48)); put("q-po-4", f(R.p4));
+  const v8 = oc(R.p8, null, N.p8_max), v4 = oc(R.p4, null, N.p4_max);
+  put("q-8", R.p8 == null ? "—" : `${f(R.p8)} → ${verdictText(v8, null, N.p8_max)}`, v8); put("q-4", R.p4 == null ? "—" : `${f(R.p4)} → ${verdictText(v4, null, N.p4_max)}`, v4);
+  put("o-w", f(R.W));
+  RD_SITA.forEach((s, i) => { put(`r-cho-${i}`, f(R.cho[key(s)])); put(`r-po-${i}`, f(R.po[key(s)])); });
+  put("r-cho-dno", f(R.cho_dno)); put("r-po-dno", f(R.po_dno));
+  put("o-mk", f(R.Mk, 1)); put("o-group", R.Mk == null ? "заполни все сита" : (R.group ? "песок " + R.group : "вне групп ГОСТ") + ", класс " + R.kl);
+  const p05 = R.po[key(0.5)], v05 = oc(p05, N.po05_min, N.po05_max), v125 = oc(R.cho_dno, null, N.p0125_max);
+  put("o-05", p05 == null ? "—" : `${f(p05)} → ${verdictText(v05, N.po05_min, N.po05_max)}`, v05);
+  put("o-0125", R.cho_dno == null ? "—" : `${f(R.cho_dno)} → ${verdictText(v125, null, N.p0125_max)}`, v125);
+  put("o-pot", f(R.poteri, 2));
+  const vp = oc(R.pyl, null, N.pyl_max), vg = oc(R.glina, null, N.glina_max);
+  put("o-pyl", f(R.pyl)); put("o-pyl-v", vp ? verdictText(vp, null, N.pyl_max) : "", vp);
+  put("o-gl-sv", f(R.glina, 2)); put("o-gl-v", vg ? verdictText(vg, null, N.glina_max) : "", vg);
+  chip(R.Mk != null ? `Мк <b>${f(R.Mk, 1)}</b> · ${R.group || "вне групп"}` : "Заполни зерновой состав", R.warn.length);
+  return R;
+}
+
+/* ===== ЩПС по ГОСТ 25607 ===== */
+const SH_BIG = [120, 80, 40, 20, 10, 5], SH_SAND = [2.5, 0.63, 0.16];
+function calcShps(H) {
+  const z = v => num(v), R = { warn: [], cho: {}, po: {}, pp: {} }, m = z(H.m), NR = shpsNorms(H.smes);
+  if (m > 0) {
+    let acc = 0, all = true;
+    for (const s of SH_BIG) { const o = z(H.o[key(s)]); if (o == null) { all = false; continue; } R.cho[key(s)] = o / m * 100; acc += o / m * 100; R.po[key(s)] = acc; }
+    if (all) { R.a1 = acc; R.a2 = 100 - acc; R.mp = m * R.a2 / 100; }
+  }
+  const pm = z(H.pm);
+  if (pm > 0) {
+    let acc = 0;
+    for (const s of SH_SAND) {
+      const o = z(H.po[key(s)]); if (o == null) break;
+      acc += o / pm * 100; R.pp[key(s)] = acc;
+      if (R.a1 != null) R.po[key(s)] = R.a1 + R.a2 * acc / 100;
+    }
+  }
+  const pr = (d, p) => { d = z(d); p = z(p); return d > 0 && p != null ? (d - p) / d * 100 : null; };
+  R.p1 = pr(H.p1d, H.p1p); R.p2 = pr(H.p2d, H.p2p);
+  if (R.a1 != null && R.p1 != null && R.p2 != null) { R.psm = (R.p1 * R.a1 + R.p2 * R.a2) / 100; R.po["0.05"] = 100 - R.psm; }
+  const gp = (mm, x) => { mm = z(mm); x = z(x); return mm > 0 && x != null ? x / mm * 100 : null; };
+  R.g1 = gp(H.g1m, H.g1x); R.g2 = gp(H.g2m, H.g2x);
+  if (R.a1 != null && R.g1 != null && R.g2 != null) { R.gsm = (R.g1 * R.a1 + R.g2 * R.a2) / 100; if (R.psm > 0) R.gdol = R.gsm / R.psm * 100; }
+  R.les = gp(H.lm, H.lx);
+  R.pokr = (SHPS[H.smes] || SHPS["С5"])[0] === "покрытия"; R.gdol_max = R.pokr ? 10 : 20;
+  let any = false, ok = true;
+  R.v = SHPS_SITA.map((s, i) => { const v = oc(R.po[key(s)], NR[i][0], NR[i][1]); if (v) any = true; if (v === "−") ok = false; return v; });
+  R.ok = any ? ok : null; R.NR = NR;
+  const D = (SHPS[H.smes] || SHPS["С5"])[1];
+  if (R.po[key(5)] != null && R.a2 < 1) R.warn.push("Почти нет песчаной части: проверь массы на ситах.");
+  if (m > 0 && D) R.D = D;
+  return R;
+}
+function viewShps() {
+  const H = S.shps, p = "shps/";
+  const big = SH_BIG.map(s => `<div class="s">${kr(s)}</div>${inp(p + "o/" + key(s), "", { aria: `Остаток на сите ${kr(s)} мм, г` })}<output id="h-cho-${key(s)}"></output><output id="h-po-${key(s)}"></output>`).join("");
+  const snd = SH_SAND.map(s => `<div class="s">${kr(s)}</div>${inp(p + "po/" + key(s), "", { aria: `Остаток на сите ${kr(s)} мм, г` })}<output id="h-pp-${key(s)}"></output><output></output>`).join("");
+  const sum = SHPS_SITA.map(s => `<div class="s">${kr(s)}</div><output id="x-po-${key(s)}"></output><output id="x-n-${key(s)}"></output><output id="x-v-${key(s)}"></output>`).join("");
+  return toolbar() +
+    sec("Смесь", "ГОСТ 25607", `<div class="fields">${sel(p + "smes", "Номер смеси", Object.entries(SHPS).map(([k, v]) => [k, `${k} — ${v[0]}, до ${v[1]} мм`]))}</div>
+      <div class="cfg-info" id="o-pcfg">—</div>`) +
+    shapka("shps") +
+    sec("1. Рассев смеси: щебень", "ГОСТ 8269.0", `<div class="fields">${inp(p + "m", "Масса пробы, г")}</div>
+      <div class="grid g3"><div class="h">Сито</div><div class="h">Масса, г</div><div class="h">Ч.О.</div><div class="h">П.О.</div>${big}</div>
+      <div class="res">Щебень (св. 5 мм): <b id="h-a1">—</b> % · песок: <b id="h-a2">—</b> % (<b id="h-mp">—</b> г)</div>`) +
+    sec("2. Рассев песчаной части", "ГОСТ 8735", `<div class="fields">${inp(p + "pm", "Навеска песка, г")}</div>
+      <div class="grid g3"><div class="h">Сито</div><div class="h">Масса, г</div><div class="h">П.О. песка</div><div class="h"></div>${snd}</div>`) +
+    sec("3. Пылевидные и глинистые частицы", "ГОСТ 25607 п. 5.7", `<div class="fields">${inp(p + "p1d", "Щебень: до промывки, г")}${inp(p + "p1p", "Щебень: после, г")}${inp(p + "p2d", "Песок: до промывки, г")}${inp(p + "p2p", "Песок: после, г")}</div>
+      <div class="res">Щебень <b id="h-p1">—</b> % · песок <b id="h-p2">—</b> % · смесь <b id="h-psm">—</b> %</div>`) +
+    sec("Зерновой состав смеси", "табл. 3", `<div class="grid gs"><div class="h">Сито</div><div class="h">П.О., %</div><div class="h">Норма</div><div class="h"></div>${sum}</div>
+      <div class="res"><span id="o-sost">—</span></div>`) +
+    sec("4. Глина в комках", "ГОСТ 25607 п. 5.8", `<div class="fields">${inp(p + "g1m", "Щебень: масса пробы, г")}${inp(p + "g1x", "Щебень: глина, г")}${inp(p + "g2m", "Песок: масса пробы, г")}${inp(p + "g2x", "Песок: глина, г")}</div>
+      <div class="res">В смеси <b id="h-gsm">—</b> % · от пылевидных <b id="h-gdol">—</b> % <span id="h-gdol-v"></span></div>`, false) +
+    sec("5. Лещадность щебня", "ГОСТ 8269.0", `<div class="fields">${inp(p + "lm", "Масса пробы, г")}${inp(p + "lx", "Пластинчатые и игловатые, г")}</div>
+      <div class="res">Результат: <b id="h-les">—</b> % <span id="h-les-v"></span></div>`, false);
+}
+function refreshShps() {
+  const H = S.shps, R = calcShps(H), sm = SHPS[H.smes] || SHPS["С5"];
+  put("o-pcfg", `${H.smes}: смесь для ${sm[0]}, наибольший размер ${sm[1]} мм. Нормы П.О.: ` + SHPS_SITA.map((s, i) => `${kr(s)} — ${normText(R.NR[i][0], R.NR[i][1])}`).join(" · "));
+  SH_BIG.forEach(s => { put(`h-cho-${key(s)}`, f(R.cho[key(s)])); put(`h-po-${key(s)}`, f(R.po[key(s)])); });
+  put("h-a1", f(R.a1)); put("h-a2", f(R.a2)); put("h-mp", R.mp == null ? "—" : kr(Math.round(R.mp)));
+  SH_SAND.forEach(s => put(`h-pp-${key(s)}`, f(R.pp[key(s)])));
+  SHPS_SITA.forEach((s, i) => { put(`x-po-${key(s)}`, f(R.po[key(s)])); put(`x-n-${key(s)}`, normText(R.NR[i][0], R.NR[i][1])); put(`x-v-${key(s)}`, R.v[i] || "", R.v[i]); });
+  put("o-sost", R.ok == null ? "Заполни рассев" : R.ok ? "Зерновой состав соответствует смеси " + H.smes : "Зерновой состав НЕ соответствует смеси " + H.smes, R.ok == null ? "" : R.ok ? "+" : "−");
+  put("h-p1", f(R.p1)); put("h-p2", f(R.p2)); put("h-psm", f(R.psm));
+  const vg = oc(R.gdol, null, R.gdol_max), vl = oc(R.les, null, 35);
+  put("h-gsm", f(R.gsm, 2)); put("h-gdol", f(R.gdol)); put("h-gdol-v", vg ? verdictText(vg, null, R.gdol_max) : "", vg);
+  put("h-les", f(R.les)); put("h-les-v", vl ? verdictText(vl, null, 35) : "", vl);
+  chip(R.ok == null ? "Заполни рассев" : R.ok ? `${H.smes}: <b class="v-plus">соответствует</b>` : `${H.smes}: <b class="v-minus">НЕ соответствует</b>`, R.warn.length);
+  return R;
+}
+
+/* ===== Бетон: образцы на сжатие ===== */
+function parseD(s) { const m = String(s || "").trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/); return m ? Date.UTC(+m[3], +m[2] - 1, +m[1]) : null; }
+function calcObr(B) {
+  const F = B_FORM[B.forma] || B_FORM.k100, R = { warn: [], ser: [], F };
+  const kl = num(B.klass), proc = num(B.proc) ?? 100, Bn = kl != null ? kl * proc / 100 : null;
+  B.ser.forEach(sr => {
+    const a = num(sr.a) ?? F[2], b = F[4] ? a : (num(sr.b) ?? F[2]), h = num(sr.h) ?? F[3];
+    const A = F[4] ? Math.PI * a * a / 4 : a * b, V = A * h;
+    const sm = sr.s.map((o, i) => { const fz = num(o.f), m = num(o.m); return { i: i + 1, f: fz, m, r: fz > 0 ? F[1] * fz * 1000 / A : null, rho: m > 0 ? m / V * 1e6 : null, x: o.x === "1", u: false }; });
+    const ok = sm.filter(o => o.r != null && !o.x), culled = sm.some(o => o.x && o.r != null);
+    let used = [];
+    if (culled) {
+      used = ok.length >= 2 ? ok : [];
+      if (ok.length < 2 && ok.length + 1 >= 2) R.warn.push(`Проба ${sr.p}: после отбраковки осталось меньше двух образцов — серия не учитывается.`);
+    } else {
+      const n = ok.length, take = { 2: 2, 3: 2, 4: 3, 6: 4 }[n] ?? n;
+      if (n === 5) R.warn.push(`Проба ${sr.p}: серия из 5 образцов в ГОСТ 10180 не описана — взято среднее всех пяти.`);
+      if (n >= 2) used = [...ok].sort((p, q) => q.r - p.r).slice(0, take);
+    }
+    used.forEach(o => o.u = true);
+    const rhos = sm.map(o => o.rho).filter(v => v != null);
+    R.ser.push({ p: sr.p, a, b, h, A, sm, Rs: used.length ? mean(used.map(o => okr(o.r, 1))) : null, rho: rhos.length ? mean(rhos) : null, nu: used.length });
+  });
+  const vals = R.ser.map(s => s.Rs).filter(v => v != null);
+  R.n = vals.length; R.Rm = mean(vals); R.Rmin = vals.length ? Math.min(...vals) : null;
+  if (R.n >= 2) {
+    R.Sm = Math.sqrt(vals.reduce((p, v) => p + (v - R.Rm) ** 2, 0) / (R.n - 1)); R.Vm = R.Sm / R.Rm * 100; R.Vr = vrFor(R.n);
+    if (R.Vr != null && okr(R.Vm) > R.Vr) R.warn.push(`Коэффициент вариации ${f(R.Vm)} % больше граничного ${f(R.Vr)} % (табл. 3 ГОСТ 18105): по схеме Г оценивать нельзя, нужно больше проб.`);
+  }
+  if (R.n === 1) R.warn.push("По ГОСТ 18105 от партии (группы конструкций) берут не менее двух проб.");
+  R.kl = kl; R.proc = proc; R.Bn = Bn;
+  if (B.naz === "smes") {
+    R.Rt = Bn != null ? 1.28 * Bn : null;
+    R.ok1 = R.Rm != null && R.Rt != null ? okr(R.Rm) >= okr(R.Rt) : null;
+    R.ok2 = R.Rmin != null && Bn != null ? okr(R.Rmin) >= okr(Bn) : null;
+    R.ok = R.ok1 == null || R.ok2 == null ? null : R.ok1 && R.ok2;
+  } else {
+    R.Bf = R.Rm != null ? 0.8 * R.Rm : null;
+    R.ok = R.Bf != null && Bn != null ? okr(R.Bf) >= okr(Bn) : null;
+  }
+  const d1 = parseD(S.obr.sh.data_otb), d2 = parseD(S.obr.sh.data_isp);
+  R.age = d1 != null && d2 != null && d2 >= d1 ? Math.round((d2 - d1) / 864e5) : null;
+  return R;
+}
+function viewObr() {
+  const B = S.obr, p = "obr/", F = B_FORM[B.forma] || B_FORM.k100;
+  const ser = B.ser.map((sr, si) => {
+    const q = `${p}ser/${si}/`;
+    const rows = sr.s.map((o, i) => `<div class="s">${i + 1}</div>${inp(`${q}s/${i}/f`, "", { aria: `Образец ${i + 1}: нагрузка, кН` })}${inp(`${q}s/${i}/m`, "", { aria: `Образец ${i + 1}: масса, г` })}<output id="b-r-${si}-${i}"></output>
+      <button type="button" class="btn x cull" data-act="cull" data-p="${q}s/${i}" aria-pressed="${o.x === "1"}" title="Отбраковать (дефект, неправильное разрушение)">${o.x === "1" ? "брак" : "✓"}</button>`).join("");
+    return sec(`Проба ${esc(sr.p || si + 1)}`, "ГОСТ 10180", `
+      <div class="fields f4">${inp(q + "p", "№ пробы", { text: 1 })}${inp(q + "a", F[4] ? `d, мм` : `a, мм`)}${F[4] ? "<span></span>" : inp(q + "b", `b, мм`)}${inp(q + "h", `h, мм`)}</div>
+      <p class="hint">Размеры пустые — берутся номинальные: ${F[4] ? `d = ${F[2]}` : `${F[2]}×${F[2]}`}, h = ${F[3]} мм.</p>
+      <div class="grid gb"><div class="h">№</div><div class="h">F, кН</div><div class="h">Масса, г</div><div class="h">R, МПа</div><div class="h"></div>${rows}</div>
+      <div class="toolbar"><span><button type="button" class="btn ghost" data-act="add-obr" data-i="${si}">+ Образец</button> <button type="button" class="btn ghost" data-act="del-obr" data-i="${si}">− Образец</button></span>
+        <button type="button" class="btn x" data-act="del-ser" data-i="${si}">Удалить пробу</button></div>
+      <div class="res">Прочность серии: <b id="b-rs-${si}">—</b> МПа · плотность <b id="b-rho-${si}">—</b> кг/м³</div>`);
+  }).join("");
+  return toolbar() +
+    sec("Класс и контроль", "ГОСТ 18105", `<div class="fields">
+      ${sel(p + "klass", "Класс бетона по прочности", B_KL.map(v => [String(v), "B" + kr(v)]))}
+      ${sel(p + "forma", "Образцы", Object.entries(B_FORM).map(([k, v]) => [k, `${v[0]} (α = ${f(v[1], 2)})`]))}
+      ${sel(p + "naz", "Что оцениваем", [["smes", "Бетонная смесь (партия)"], ["mon", "Монолитная конструкция"]])}
+      ${inp(p + "proc", "Требуемая прочность в этом возрасте, % от класса")}
+    </div><div class="cfg-info" id="o-pcfg">—</div>
+    <p class="hint">Контроль по схеме Г (по образцам, без статистики за период). Неправильно разрушенный или дефектный образец — жми ✓, станет «брак».</p>`) +
+    shapka("obr") + ser +
+    `<button type="button" class="btn ghost" data-act="add-ser">+ Проба</button>` +
+    sec("Оценка прочности", "ГОСТ 18105", `<div class="res">Средняя Rm = <b id="b-rm">—</b> МПа · мин. проба <b id="b-rmin">—</b> МПа · проб <b id="b-n">—</b></div>
+      <div class="res">Sm = <b id="b-sm">—</b> МПа · Vm = <b id="b-vm">—</b> % · граничный Vr = <b id="b-vr">—</b> %</div>
+      <div class="res" id="b-res">—</div>`);
+}
+function refreshObr() {
+  const B = S.obr, R = calcObr(B), F = R.F;
+  const req = R.Bn == null ? "выбери класс" : B.naz === "smes"
+    ? `нужно Rm ≥ Rт = 1,28 × ${f(R.Bn)} = ${f(R.Rt)} МПа и каждая проба ≥ ${f(R.Bn)} МПа`
+    : `нужно Bф = 0,8·Rm ≥ ${f(R.Bn)} МПа`;
+  put("o-pcfg", `B${kr(R.kl)}${R.proc !== 100 ? ` · ${kr(R.proc)} % от класса = ${f(R.Bn)} МПа` : ""} · ${F[0]}, α = ${f(F[1], 2)}` + (R.age != null ? ` · возраст ${R.age} сут` : "") + ` · ${req}`);
+  R.ser.forEach((s, si) => {
+    s.sm.forEach((o, i) => put(`b-r-${si}-${i}`, o.r == null ? "—" : o.u ? f(o.r) : `(${f(o.r)})`));
+    put(`b-rs-${si}`, s.Rs == null ? "—" : f(s.Rs)); put(`b-rho-${si}`, s.rho == null ? "—" : f(s.rho, 0));
+  });
+  put("b-rm", f(R.Rm)); put("b-rmin", f(R.Rmin)); put("b-n", String(R.n));
+  put("b-sm", f(R.Sm, 2)); put("b-vm", f(R.Vm)); put("b-vr", R.Vr == null ? (R.n >= 2 ? "не задан при n < 3" : "—") : f(R.Vr));
+  const res = R.ok == null ? "Заполни нагрузки хотя бы в одной пробе" : B.naz === "smes"
+    ? `Rm ${f(R.Rm)} ${R.ok1 ? "≥" : "<"} Rт ${f(R.Rt)}; мин. ${f(R.Rmin)} ${R.ok2 ? "≥" : "<"} ${f(R.Bn)} → ${R.ok ? "прочность соответствует" : "НЕ соответствует"} B${kr(R.kl)}`
+    : `Bф = 0,8 × ${f(R.Rm)} = ${f(R.Bf)} МПа ${R.ok ? "≥" : "<"} ${f(R.Bn)} → ${R.ok ? "соответствует" : "НЕ соответствует"} B${kr(R.kl)}`;
+  put("b-res", res, R.ok == null ? "" : R.ok ? "+" : "−");
+  chip(R.ok == null ? "Заполни нагрузки" : `B${kr(R.kl)}: <b class="${R.ok ? "v-plus" : "v-minus"}">${R.ok ? "соответствует" : "НЕ соответствует"}</b> · Rm ${f(R.Rm)}`, R.warn.length);
+  return R;
+}
+
+/* ===== Бетонная смесь на объекте ===== */
+const bsRange = x => x[2] >= 999 ? `от ${x[1]}` : x[1] === 0 ? `менее ${x[2] + 1}` : `${x[1]}–${x[2]}`;
+function calcBsm(M) {
+  const R = { warn: [], pr: [] }, isP = M.tip !== "R", L = isP ? BS_P : BS_R, V = num(M.V);
+  const oz = num(M.oz), rz = num(M.rz), tz = num(M.tz), pz = num(M.pz);
+  const markL = L.find(x => x[0] === M.mark) || L[0];
+  M.pr.forEach(p => {
+    const o1 = num(p.o1), o2 = num(p.o2), q = { n: p.n, nakl: p.nakl, vr: p.vr, o1, o2 };
+    const nm = isP ? "осадки" : "расплывы";
+    if (o1 != null && o2 != null) {
+      const avg = (o1 + o2) / 2, d = Math.abs(o1 - o2);
+      q.o = okr(avg, 0);
+      if (isP) { const lim = q.o <= 9 ? 1 : q.o <= 15 ? 2 : 3; if (d > lim) R.warn.push(`Проба ${p.n}: ${nm} ${kr(o1)} и ${kr(o2)} см расходятся больше чем на ${lim} см — повтори на новой порции (ГОСТ 10181 п. 4.2.3.8).`); }
+      else if (d > 0.2 * avg) R.warn.push(`Проба ${p.n}: ${nm} расходятся больше чем на 20 % — повтори на новой пробе (ГОСТ 10181 п. 4.4.4.2).`);
+      q.mk = bsMark(q.o, L);
+      q.vMark = q.o >= markL[1] && q.o <= markL[2] ? "+" : "−";
+      if (oz != null) { q.tolO = isP ? (oz <= 10 ? 1 : 2) : 3; q.vOz = Math.abs(q.o - oz) <= q.tolO ? "+" : "−"; }
+    } else if (o1 != null || o2 != null) R.warn.push(`Проба ${p.n}: ${isP ? "осадку" : "расплыв"} определяют два раза.`);
+    q.d = [[p.m1a, p.ma], [p.m1b, p.mb]].map(([a, b]) => { a = num(a); b = num(b); return V > 0 && a != null && b != null ? (b - a) / V * 1000 : null; });
+    const okd = q.d.filter(v => v != null);
+    if (okd.length) {
+      q.rho = mean(okd);
+      if (okd.length === 2 && Math.abs(okd[0] - okd[1]) > 0.02 * q.rho) R.warn.push(`Проба ${p.n}: две плотности расходятся больше 2 % — повтори на новой пробе (ГОСТ 10181 п. 5.4.2).`);
+      if (okd.length === 1) R.warn.push(`Проба ${p.n}: плотность определяют два раза (ГОСТ 10181 п. 5.4.2).`);
+      if (rz != null) q.vRz = Math.abs(okr(q.rho, 0) - rz) <= 20 ? "+" : "−";
+    }
+    const t1 = num(p.t1), t2 = num(p.t2), tt = [t1, t2].filter(v => v != null);
+    if (tt.length) {
+      q.t = mean(tt);
+      if (tt.length === 2 && Math.abs(t1 - t2) > 2) R.warn.push(`Проба ${p.n}: два замера температуры отличаются больше 2 °C (ГОСТ 10181 п. 8.2.5).`);
+      if (tz != null) q.vTz = Math.abs(q.t - tz) <= 3 ? "+" : "−";
+    }
+    q.air = num(p.air); if (q.air != null && pz != null) q.vPz = Math.abs(q.air - pz) <= 1 ? "+" : "−";
+    const vs = [q.vMark, q.vOz, q.vRz, q.vTz, q.vPz].filter(Boolean);
+    q.ok = vs.length ? vs.every(v => v === "+") : null;
+    R.pr.push(q);
+  });
+  const oks = R.pr.map(q => q.ok).filter(v => v != null);
+  R.ok = oks.length ? oks.every(Boolean) : null;
+  R.markL = markL; R.isP = isP; R.oz = oz; R.rz = rz; R.tz = tz; R.pz = pz;
+  return R;
+}
+function viewBsm() {
+  const M = S.bsm, p = "bsm/", isP = M.tip !== "R", L = isP ? BS_P : BS_R, w = isP ? "Осадка" : "Расплыв";
+  const prs = M.pr.map((q, i) => {
+    const b = `${p}pr/${i}/`;
+    return sec(`Проба ${esc(q.n || i + 1)}`, "ГОСТ 10181", `
+      <div class="fields f3">${inp(b + "n", "№ пробы", { text: 1 })}${inp(b + "nakl", "Накладная", { text: 1 })}${inp(b + "vr", "Время", { text: 1 })}</div>
+      <div class="fields f2">${inp(b + "o1", `${w} 1, см`)}${inp(b + "o2", `${w} 2, см`)}</div>
+      <div class="res">${w}: <b id="bs-o-${i}">—</b></div>
+      <div class="fields f2">${inp(b + "m1a", "Сосуд 1 пустой, г")}${inp(b + "ma", "Сосуд 1 со смесью, г")}${inp(b + "m1b", "Сосуд 2 пустой, г")}${inp(b + "mb", "Сосуд 2 со смесью, г")}</div>
+      <div class="res">Плотность: <b id="bs-rho-${i}">—</b></div>
+      <div class="fields f3">${inp(b + "t1", "t 1, °C")}${inp(b + "t2", "t 2 (+5 мин)")}${inp(b + "air", "Воздух, %")}</div>
+      <div class="res">Температура: <b id="bs-t-${i}">—</b> · пористость <b id="bs-air-${i}">—</b></div>
+      <div class="toolbar"><b id="bs-ok-${i}">—</b><button type="button" class="btn x" data-act="del-pr" data-i="${i}">Удалить пробу</button></div>`);
+  }).join("");
+  return toolbar() +
+    sec("Требования к смеси", "ГОСТ 7473", `<div class="fields">
+      ${sel(p + "tip", "Удобоукладываемость", [["P", "Осадка конуса (П)"], ["R", "Расплыв конуса (Р)"]])}
+      ${sel(p + "mark", "Марка", L.map(x => [x[0], `${x[0]} (${bsRange(x)} см)`]))}
+      ${inp(p + "oz", isP ? "Заданная осадка, см (если есть)" : "Заданный расплыв, см (если есть)")}
+      ${inp(p + "rz", "Заданная плотность, кг/м³")}${inp(p + "tz", "Заданная температура, °C")}${inp(p + "pz", "Заданная пористость, %")}
+    </div><div class="cfg-info" id="o-pcfg">—</div>
+    <p class="hint">Пустые «заданные» поля не проверяются. Допуски — табл. 5 и 7 ГОСТ 7473.</p>`) +
+    shapka("bsm") +
+    sec("Мерный сосуд", "ГОСТ 10181 табл. 2", `<div class="fields">${inp(p + "V", "Вместимость сосуда V, см³")}</div>
+      <p class="hint">Не меньше 1000 см³ при крупности до 20 мм, 5000 — до 40 мм, 10 000 — до 80 мм.</p>`, false) +
+    prs + `<button type="button" class="btn ghost" data-act="add-pr">+ Проба</button>` +
+    sec("Итог", "", `<div class="res" id="bs-res">—</div>`);
+}
+function refreshBsm() {
+  const M = S.bsm, R = calcBsm(M), u = R.isP ? "осадка" : "расплыв";
+  put("o-pcfg", `Марка ${R.markL[0]}: ${u} ${bsRange(R.markL)} см` + (R.oz != null ? ` · задано ${kr(R.oz)} ± ${R.isP ? (R.oz <= 10 ? 1 : 2) : 3} см` : "") +
+    (R.rz != null ? ` · плотность ${kr(R.rz)} ± 20 кг/м³` : "") + (R.tz != null ? ` · температура ${kr(R.tz)} ± 3 °C` : "") + (R.pz != null ? ` · пористость ${kr(R.pz)} ± 1 %` : ""));
+  const vv = v => v ? ` (${v})` : "";
+  R.pr.forEach((q, i) => {
+    put(`bs-o-${i}`, q.o == null ? "—" : `${kr(q.o)} см → ${q.mk || "вне марок"}${vv(q.vMark)}` + (q.vOz ? ` · от заданного${vv(q.vOz)}` : ""), q.vOz === "−" ? "−" : q.vMark);
+    put(`bs-rho-${i}`, q.rho == null ? "—" : `${f(q.rho, 0)} кг/м³` + (q.d.filter(v => v != null).length === 2 ? ` (${f(q.d[0], 0)} и ${f(q.d[1], 0)})` : "") + vv(q.vRz), q.vRz);
+    put(`bs-t-${i}`, q.t == null ? "—" : `${f(q.t)} °C${vv(q.vTz)}`, q.vTz);
+    put(`bs-air-${i}`, q.air == null ? "—" : `${f(q.air)} %${vv(q.vPz)}`, q.vPz);
+    put(`bs-ok-${i}`, q.ok == null ? "Заполни замеры" : q.ok ? "Проба соответствует" : "Проба НЕ соответствует", q.ok == null ? "" : q.ok ? "+" : "−");
+  });
+  put("bs-res", R.ok == null ? "Заполни хотя бы одну пробу" : R.ok ? `Смесь соответствует требованиям (${R.markL[0]})` : `Смесь НЕ соответствует требованиям (${R.markL[0]})`, R.ok == null ? "" : R.ok ? "+" : "−");
+  const q0 = R.pr.find(q => q.o != null);
+  chip(R.ok == null ? "Заполни замеры" : `${R.markL[0]}: <b class="${R.ok ? "v-plus" : "v-minus"}">${R.ok ? "соответствует" : "НЕ соответствует"}</b>` + (q0 ? ` · ${u} ${kr(q0.o)} см` : ""), R.warn.length);
+  return R;
+}
+function docBsm() {
+  const M = S.bsm, R = calcBsm(M), u = R.isP ? "Осадка конуса" : "Расплыв конуса";
+  if (!R.pr.some(q => q.o != null || q.rho != null)) throw new Error("Заполни замеры хотя бы в одной пробе.");
+  const c = [...dHead(M.sh, "Протокол испытаний бетонной смеси", "Испытания по ГОСТ 10181-2014, требования по ГОСТ 7473-2010", "bsm")];
+  c.push(dP(`Требуемая марка по удобоукладываемости ${R.markL[0]} (${bsRange(R.markL)} см)` + (R.oz != null ? `; заданное значение ${kr(R.oz)} ± ${R.isP ? (R.oz <= 10 ? 1 : 2) : 3} см` : "") +
+    (R.rz != null ? `; средняя плотность ${kr(R.rz)} ± 20 кг/м³` : "") + (R.tz != null ? `; температура ${kr(R.tz)} ± 3 °C` : "") + (R.pz != null ? `; пористость ${kr(R.pz)} ± 1 %` : "") + `. Мерный сосуд V = ${kr(num(M.V))} см³.`, { size: 10 }));
+  const vt2 = v => v ? ` (${v})` : "";
+  const rows = [["Проба", "Накладная, время", `${u}: 1 / 2, см`, "Среднее, см / марка", "Плотность, кг/м³", "Температура, °C", "Пористость, %", "Вывод"]];
+  R.pr.forEach(q => rows.push([q.n, [q.nakl, q.vr].filter(Boolean).join(", ") || "—",
+    q.o1 == null ? "—" : `${kr(q.o1)} / ${q.o2 == null ? "—" : kr(q.o2)}`,
+    q.o == null ? "—" : `${kr(q.o)} / ${q.mk || "вне марок"}${vt2(q.vOz === "−" ? "−" : q.vMark)}`,
+    q.rho == null ? "—" : f(q.rho, 0) + vt2(q.vRz), q.t == null ? "—" : f(q.t) + vt2(q.vTz), q.air == null ? "—" : f(q.air) + vt2(q.vPz),
+    q.ok == null ? "—" : q.ok ? "соответствует" : "не соответствует"]));
+  c.push(...dT(rows, { size: 9, first: 800 }));
+  c.push(dP(`Заключение: бетонная смесь ${R.ok == null ? "—" : R.ok ? "соответствует" : "НЕ соответствует"} требованиям (марка ${R.markL[0]}).`, { b: 1 }));
+  c.push(...dFoot(M.sh, R.warn));
+  return { children: c, name: "бетонная_смесь", sh: M.sh };
+}
+
+/* ===== Керны асфальтобетона ===== */
+function krNorms(K) {
+  const L = KR_L[K.sloy] || KR_L.verh, ty = L.types[K.tip] || Object.values(L.types)[0], tro = K.tro === "1";
+  const s = ty.s || L.s, t = ty.t;
+  return { L, s: [s[0], tro && s[2] ? s[2] : s[1]], t: [t[0], tro && t[2] ? t[2] : t[1]], tip: L.types[K.tip] ? K.tip : Object.keys(L.types)[0] };
+}
+function calcKern(K) {
+  const R = { warn: [], m: [] }, gmm = num(K.gmm), hpr = num(K.hpr), N = krNorms(K);
+  if (!(gmm > 0)) R.warn.push("Укажи максимальную плотность смеси Gmm (по приёмо-сдаточным испытаниям или рецепту).");
+  K.mesta.forEach((mp, mi) => {
+    const ks = mp.k.map((k, i) => {
+      const a = num(k.a), b = num(k.b), c = num(k.c), h = num(k.h), o = { i: i + 1, a, b, c, h };
+      if (a > 0 && b > 0 && c != null && b > c) {
+        o.gmb = a / (b - c) * RHO_W; o.w = (b - a) / (b - c) * 100;
+        if (okr(o.w) > 2) R.warn.push(`${mp.n || "Место " + (mi + 1)}, керн ${i + 1}: водопоглощение ${f(o.w)} % больше 2 % — объёмную плотность нужно определять по ГОСТ Р 58401.20 (парафин).`);
+        if (b < a) R.warn.push(`${mp.n || "Место " + (mi + 1)}, керн ${i + 1}: масса после воды (B) меньше сухой (A) — проверь взвешивание.`);
+        if (gmm > 0) o.pa = (1 - okr(o.gmb, 3) / gmm) * 100;
+      }
+      return o;
+    });
+    const g = ks.filter(o => o.gmb != null), hs = ks.map(o => o.h).filter(v => v != null);
+    const m = { n: mp.n || `Место ${mi + 1}`, ks, gmb: g.length ? mean(g.map(o => okr(o.gmb, 3))) : null, h: hs.length ? mean(hs) : null };
+    if (m.gmb != null && gmm > 0) { m.pa = (1 - okr(m.gmb, 3) / gmm) * 100; m.v = oc(m.pa, N.s[0], N.s[1]); }
+    if (m.h != null && hpr > 0) m.dh = m.h - hpr;
+    R.m.push(m);
+  });
+  const ok = R.m.filter(m => m.pa != null);
+  R.nm = ok.length;
+  if (R.nm >= 3) {
+    R.pa = mean(ok.map(m => okr(m.pa, 1))); R.vMean = oc(R.pa, N.t[0], N.t[1]);
+    R.ok = R.vMean === "+" && ok.every(m => m.v === "+");
+  } else if (R.nm) R.ok = ok.every(m => m.v === "+");
+  else R.ok = null;
+  R.N = N; R.gmm = gmm; R.hpr = hpr;
+  return R;
+}
+function viewKern() {
+  const K = S.kern, p = "kern/", N = krNorms(K);
+  const mesta = K.mesta.map((mp, mi) => {
+    const q = `${p}mesta/${mi}/`;
+    const ks = mp.k.map((k, i) => `<div class="frac"><div class="frac-h"><b>Керн ${i + 1}</b>${mp.k.length > 1 ? `<button type="button" class="btn x" data-act="del-kern" data-mi="${mi}" data-i="${i}" aria-label="Убрать керн">✕</button>` : ""}</div>
+      <div class="fields f2">${inp(`${q}k/${i}/a`, "A сухой, г")}${inp(`${q}k/${i}/b`, "B после воды, г")}${inp(`${q}k/${i}/c`, "C в воде, г")}${inp(`${q}k/${i}/h`, "Толщина, см")}</div>
+      <div class="res">Gmb <b id="k-g-${mi}-${i}">—</b> · Wп <b id="k-w-${mi}-${i}">—</b> % · пустоты <b id="k-p-${mi}-${i}">—</b> %</div></div>`).join("");
+    return sec(esc(mp.n || `Место ${mi + 1}`), "ГОСТ Р 58401.10", `<div class="fields">${inp(q + "n", "Место отбора (ПК, полоса)", { text: 1 })}</div>${ks}
+      <div class="toolbar"><button type="button" class="btn ghost" data-act="add-kern" data-mi="${mi}">+ Керн</button><button type="button" class="btn x" data-act="del-mesto" data-i="${mi}">Удалить место</button></div>
+      <div class="res">По месту: Gmb <b id="k-mg-${mi}">—</b> г/см³ · пустоты <b id="k-mp-${mi}">—</b> · толщина <b id="k-mh-${mi}">—</b></div>`);
+  }).join("");
+  return toolbar() +
+    sec("Слой и смесь", N.L.gost.replace(/-\d+$/, ""), `<div class="fields">
+      ${sel(p + "sloy", "Слой", Object.entries(KR_L).map(([k, v]) => [k, v.name]))}
+      ${sel(p + "tip", "Тип смеси", Object.keys(N.L.types).map(k => [k, k]))}
+      ${inp(p + "gmm", "Максимальная плотность Gmm, г/см³")}${inp(p + "hpr", "Проектная толщина слоя, см")}
+      ${K.sloy === "osn" ? "" : sel(p + "tro", "Назначение", [["0", "Проезжая часть"], ["1", "Тротуар, обустройство (без движения авто)"]])}
+    </div><div class="cfg-info" id="o-pcfg">—</div>
+    <p class="hint">Gmm берут из приёмо-сдаточных испытаний смеси для участка, а если их нет — из утверждённого рецепта. A — масса сухого керна на воздухе, B — на воздухе после 4 мин в воде (поверхность протёрта), C — в воде. Плотность воды 0,997 г/см³. Керны отбирают в 1–3 местах на каждые 3000 м².</p>`) +
+    shapka("kern") + mesta + `<button type="button" class="btn ghost" data-act="add-mesto">+ Место отбора</button>` +
+    sec("Итог", "ГОСТ Р 58406", `<div class="res" id="k-res">—</div>`);
+}
+function refreshKern() {
+  const K = S.kern, R = calcKern(K), N = R.N;
+  put("o-pcfg", `${N.L.name}, ${N.tip}: пустоты в кернах ${normText(N.s[0], N.s[1])} % по каждому месту; при 3 местах и более среднее ${normText(N.t[0], N.t[1])} % (${N.L.gost})`);
+  R.m.forEach((m, mi) => {
+    m.ks.forEach((o, i) => { put(`k-g-${mi}-${i}`, o.gmb == null ? "—" : f(o.gmb, 3)); put(`k-w-${mi}-${i}`, f(o.w)); put(`k-p-${mi}-${i}`, f(o.pa)); });
+    put(`k-mg-${mi}`, m.gmb == null ? "—" : f(m.gmb, 3));
+    put(`k-mp-${mi}`, m.pa == null ? "—" : `${f(m.pa)} % → ${verdictText(m.v, N.s[0], N.s[1])}`, m.v);
+    put(`k-mh-${mi}`, m.h == null ? "—" : `${f(m.h)} см` + (m.dh != null ? ` (${m.dh >= 0 ? "+" : "−"}${f(Math.abs(m.dh))} от проекта)` : ""));
+  });
+  const res = R.ok == null ? "Заполни массы кернов и Gmm" : R.nm >= 3
+    ? `Среднее по ${R.nm} местам: ${f(R.pa)} % → ${verdictText(R.vMean, N.t[0], N.t[1])}; каждое место в пределах ${normText(N.s[0], N.s[1])}: ${R.m.filter(m => m.pa != null).every(m => m.v === "+") ? "да" : "нет"} → ${R.ok ? "уплотнение соответствует" : "уплотнение НЕ соответствует"}`
+    : `Единичные измерения (${R.nm} ${R.nm === 1 ? "место" : "места"}): ${R.ok ? "уплотнение соответствует" : "уплотнение НЕ соответствует"} (норма ${normText(N.s[0], N.s[1])} %)`;
+  put("k-res", res, R.ok == null ? "" : R.ok ? "+" : "−");
+  chip(R.ok == null ? "Заполни керны" : `${N.tip}: <b class="${R.ok ? "v-plus" : "v-minus"}">${R.ok ? "соответствует" : "НЕ соответствует"}</b>` + (R.nm >= 3 ? ` · Pa ${f(R.pa)} %` : ""), R.warn.length);
+  return R;
+}
+function docKern() {
+  const K = S.kern, R = calcKern(K), N = R.N;
+  if (R.ok == null) throw new Error("Заполни Gmm и массы A, B, C хотя бы одного керна.");
+  const c = [...dHead(K.sh, "Протокол испытаний кернов асфальтобетона", "Объёмная плотность по ГОСТ Р 58401.10-2019 (метод А), воздушные пустоты по ГОСТ Р 58401.8-2019", "kern")];
+  c.push(dP(`${N.L.name}, смесь ${N.tip}${K.tro === "1" ? " (тротуар / обустройство)" : ""}. Максимальная плотность смеси Gmm = ${f(R.gmm, 3)} г/см³. Плотность воды 0,997 г/см³.` + (R.hpr > 0 ? ` Проектная толщина слоя ${kr(R.hpr)} см.` : ""), { size: 10 }));
+  const rows = [["Место отбора", "Керн", "A, г", "B, г", "C, г", "Толщина, см", "Gmb, г/см³", "Wп, %", "Пустоты Pa, %"]];
+  R.m.forEach(m => m.ks.forEach((o, k) => rows.push([k ? "" : m.n, o.i, kr(o.a), kr(o.b), kr(o.c), o.h == null ? "—" : f(o.h), o.gmb == null ? "—" : f(o.gmb, 3), f(o.w), f(o.pa)])));
+  c.push(...dT(rows, { size: 9, first: 2000 }));
+  c.push(dP("Результаты по местам отбора", { b: 1 }));
+  c.push(...dT([["Место отбора", "Gmb, г/см³", "Пустоты, %", `Требование, % (${R.nm >= 3 ? "для каждого места" : "единичные измерения"})`, "Толщина, см"],
+    ...R.m.map(m => [m.n, m.gmb == null ? "—" : f(m.gmb, 3), f(m.pa), normText(N.s[0], N.s[1]) + vt(m.v), m.h == null ? "—" : f(m.h) + (m.dh != null ? ` (${m.dh >= 0 ? "+" : "−"}${f(Math.abs(m.dh))})` : "")])], { size: 9, first: 2600 }));
+  if (R.nm >= 3) c.push(dP(`Среднее содержание воздушных пустот по ${R.nm} местам: ${f(R.pa)} %. Требование ${N.L.gost}: ${normText(N.t[0], N.t[1])} %${vt(R.vMean)}.`, { size: 10 }));
+  c.push(dP(`Заключение: качество уплотнения слоя ${R.ok ? "соответствует" : "НЕ соответствует"} требованиям ${N.L.gost}.`, { b: 1 }));
+  c.push(dP("Толщина приведена справочно; допуски по толщине — по ГОСТ Р 59120-2021, п. 8.1.1.", { size: 8 }));
+  c.push(...dFoot(K.sh, R.warn));
+  return { children: c, name: "керны", sh: K.sh };
+}
+
+function kindOf() {
+  if (S.mat === "pesok") return "sand";
+  if (S.mat === "otsev") return S.otsev.gost === "32730" ? "road" : "sand";
+  if (["sheben", "shps", "obr", "bsm", "kern"].includes(S.mat)) return S.mat;
+  return "soon";
+}
+function viewSoon() {
+  return `<div class="empty"><b>${MAT[S.mat][1]}</b> — вкладка в работе. Скоро здесь будет расчёт по ГОСТу и протокол в Word.</div>`;
+}
+function render() {
+  const g = MAT[S.mat][0];
+  // сегмент и «таблетки» не пересоздаём, а переключаем — так ползунок и цвета плавно едут
+  const grpEl = document.getElementById("grp"), matsEl = document.getElementById("mats");
+  if (!grpEl.querySelector("button")) grpEl.innerHTML = '<span class="thumb" aria-hidden="true"></span>' + GRP.map(([k, t]) => `<button type="button" data-act="grp" data-g="${k}">${t}</button>`).join("");
+  grpEl.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.g === g)));
+  if (matsEl.dataset.g !== g) {
+    matsEl.dataset.g = g;
+    matsEl.innerHTML = Object.entries(MAT).filter(([, v]) => v[0] === g)
+      .map(([k, v]) => `<button type="button" data-act="mat" data-m="${k}">${v[1]}${READY.has(k) ? "" : ' <span class="soon">скоро</span>'}</button>`).join("");
+  }
+  matsEl.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.m === S.mat)));
+  moveThumb();
+  const kd = kindOf();
+  view.innerHTML = kd === "sand" ? viewSand(S.mat) : kd === "road" ? viewRoad() : kd === "sheben" ? viewSheben() : kd === "shps" ? viewShps() : kd === "obr" ? viewObr() : kd === "bsm" ? viewBsm() : kd === "kern" ? viewKern() : viewSoon();
+  document.getElementById("btn-word").hidden = kd === "soon";
+  view.querySelectorAll("input[data-k]").forEach(markBad);
+  refresh();
+}
+function markBad(el) { const t = el.value.trim(); el.classList.toggle("bad", el.inputMode === "decimal" && t !== "" && num(t) == null); }
+function put(id, text, v) {
+  const el = document.getElementById(id); if (!el) return;
+  el.textContent = text;
+  el.classList.toggle("v-plus", v === "+"); el.classList.toggle("v-minus", v === "−");
+}
+function verdictText(v, mn, mx) { return v ? `${normText(mn, mx)} (${v})` : normText(mn, mx); }
+
+function refresh() {
+  let R;
+  const kd = kindOf();
+  if (kd === "road") R = refreshRoad();
+  else if (kd === "shps") R = refreshShps();
+  else if (kd === "obr") R = refreshObr();
+  else if (kd === "bsm") R = refreshBsm();
+  else if (kd === "kern") R = refreshKern();
+  else if (kd === "soon") { R = { warn: [] }; chip("Раздел в работе", 0); }
+  else if (kd === "sand") {
+    const P = S[S.mat], nr = k => R.N[k] ?? null;
+    R = calcPesok(P, S.mat);
+    const N = R.N, nt = (mx, mn = null) => normText(mn, mx);
+    put("o-pcfg", (N.group ? `Группа: ${N.group}${(P.cfg.gruppa === "auto" || P.cfg.klass === "manual") ? " (по Мк)" : " (выбрана)"}` : R.Mk == null ? "Группа определится по Мк" : "Группа: вне ГОСТ") +
+      ` · нормы: сито 10 ${nt(N.gr10_max)} · сито 5 ${nt(N.gr5_max)} · 0,63: ${nt(N.po063_max, N.po063_min)} · проход 0,16 ${nt(N.pr016_max)} · пыль ${nt(N.pyl_max)} · глина ${nt(N.glina_max)} %`);
+    put("g-cho-10", f(R.cho10)); put("g-po-10", f(R.po10)); put("g-cho-5", f(R.cho5)); put("g-po-5", f(R.po5));
+    const v10 = oc(R.po10, null, nr("gr10_max")), v5 = oc(R.po5, null, nr("gr5_max"));
+    put("o-g10", verdictText(v10, null, nr("gr10_max")), v10); put("o-g5", verdictText(v5, null, nr("gr5_max")), v5);
+    put("o-w", f(R.W));
+    SAND.forEach((s, i) => { put(`r-cho-${i}`, f(R.cho[key(s)])); put(`r-po-${i}`, f(R.po[key(s)])); });
+    put("r-cho-dno", f(R.cho_dno)); put("r-po-dno", f(R.po_dno));
+    put("o-mk", f(R.Mk, 2)); put("o-group", R.Mk == null ? "заполни все сита" : (R.group ? "песок " + R.group : "вне групп ГОСТ") + (klassText(P) ? `, класс ${klassText(P)}` : ""));
+    const v63 = oc(R.po[key(0.63)], nr("po063_min"), nr("po063_max")), v16 = oc(R.prohod, null, nr("pr016_max"));
+    put("o-063", R.po[key(0.63)] == null ? "—" : `${f(R.po[key(0.63)])} → ${verdictText(v63, nr("po063_min"), nr("po063_max"))}`, v63);
+    put("o-016", R.prohod == null ? "—" : `${f(R.prohod)} → ${verdictText(v16, null, nr("pr016_max"))}`, v16);
+    put("o-pot", f(R.poteri, 2));
+    const vp = oc(R.pyl, null, nr("pyl_max"));
+    put("o-pyl", f(R.pyl)); put("o-pyl-v", vp ? verdictText(vp, null, nr("pyl_max")) : "", vp);
+    R.glina.rows.forEach((g, i) => { put(`gl-${i}-n`, g.nazv); put(`gl-${i}-r`, f(g.sr)); });
+    const vg = oc(R.glina.sv, null, nr("glina_max"));
+    put("o-gl-sv", f(R.glina.sv)); put("o-gl-v", vg ? verdictText(vg, null, nr("glina_max")) : "", vg);
+    [1, 2].forEach(i => { const q = R.plotn.find(x => x.i === i); put(`o-ro-${i}`, q ? f(q.ro, 0) : "—"); });
+    put("o-ro", f(R.plotn_sr, 0));
+    chip(R.Mk != null ? `Мк <b>${f(R.Mk, 2)}</b> · ${R.group || "вне групп"}` : "Заполни зерновой состав", R.warn.length);
+  } else {
+    const T = S.sheben, nr = k => num(T.nr[k]);
+    R = calcSheben(T); // kd === "sheben"
+    T.sita.forEach((_, idx) => {
+      const r = R.rs[idx];
+      put(`s-cho-${idx}`, r ? f(r.a) : "—"); put(`s-po-${idx}`, r ? f(r.po) : "—");
+      put(`s-pp-${idx}`, r ? f(r.pp) + (r.v ? " " + r.v : "") : "—", r && r.v);
+    });
+    put("s-cho-dno", R.dno ? f(R.dno.a) : "—"); put("s-po-dno", R.dno ? f(R.dno.po) : "—");
+    put("o-sost", R.ok == null ? "Нет норм для оценки" : R.ok ? "Зерновой состав соответствует" : "Зерновой состав НЕ соответствует", R.ok == null ? "" : R.ok ? "+" : "−");
+    put("o-pot", f(R.poteri, 2));
+    for (const t in TESTS) {
+      R.frak[t].rows.forEach((g, i) => { put(`f-${t}-${i}-n`, g.nazv); put(`f-${t}-${i}-r`, f(g.sr)); });
+      const mx = nr(t + "_max"), v = oc(R.frak[t].sv, null, mx);
+      put(`o-${t}-sv`, f(R.frak[t].sv)); put(`o-${t}-v`, v ? verdictText(v, null, mx) : "", v);
+    }
+    put("o-les-m", R.frak.les.sv != null ? "· по факту марка " + lesMark(R.frak.les.sv) : "");
+    [1, 2].forEach(i => { const q = R.pyl.find(x => x.i === i); put(`o-p${i}`, q ? f(q.p) : "—"); });
+    const vp = oc(R.pyl_sr, null, nr("pyl_max"));
+    put("o-psr", f(R.pyl_sr)); put("o-p-v", vp ? verdictText(vp, null, nr("pyl_max")) : "", vp);
+    chip(R.ok == null ? "Заполни рассев" : R.ok ? `Состав: <b class="v-plus">соответствует</b>` : `Состав: <b class="v-minus">НЕ соответствует</b>`, R.warn.length);
+  }
+  const w = document.getElementById("o-warn");
+  if (w) { w.hidden = !R.warn.length; w.innerHTML = R.warn.map(x => `<div>⚠ ${esc(x)}</div>`).join(""); }
+  return R;
+}
+function chip(html, nw) { document.getElementById("chip").innerHTML = html + (nw ? ` · <span class="v-minus">⚠ ${nw}</span>` : ""); }
+
+/* ================= events ================= */
+document.addEventListener("change", e => {
+  const k = e.target.dataset.k; if (!k || !e.target.dataset.cfg) return;
+  setP(k, e.target.value);
+  if (k.startsWith("sheben/")) applyCfg(/\/(frak|zs)$/.test(k), k.endsWith("/zs"));
+  if (k === "shps/smes") S.shps.sh.mark = e.target.value;
+  if (k === "kern/sloy") { S.kern.tip = Object.keys(KR_L[S.kern.sloy].types)[0]; S.kern.sh.mark = S.kern.tip; }
+  if (k === "kern/tip") S.kern.sh.mark = S.kern.tip;
+  if (k === "bsm/tip") S.bsm.mark = (S.bsm.tip === "R" ? BS_R : BS_P)[0][0];
+  save(); render();
+  if (k.endsWith("/frak")) toast("Сита подставлены под фракцию " + S.sheben.sh.mark + ". Массы рассева очищены.");
+});
+document.addEventListener("input", e => {
+  const k = e.target.dataset.k; if (!k || e.target.dataset.cfg) return;
+  setP(k, e.target.value); markBad(e.target); save();
+  if (/\/sita\/\d+\/s$/.test(k)) { scheduleRender(); return; }
+  refresh();
+});
+let rt; function scheduleRender() { clearTimeout(rt); rt = setTimeout(() => { const a = document.activeElement?.id; render(); if (a) document.getElementById(a)?.focus(); }, 700); }
+
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const act = b.dataset.act;
+  if (act === "mat") { if (b.dataset.m !== S.mat) switchMat(b.dataset.m); }
+  else if (act === "grp") { const g = b.dataset.g; if (g !== MAT[S.mat][0]) switchMat((S.last || {})[g] || Object.keys(MAT).find(k => MAT[k][0] === g)); }
+  else if (act === "shapka") { const m = b.dataset.m; openSheet("Шапка протокола", shapkaFields(m), () => { save(); render(); }); }
+  else if (act === "sheet-close") closeSheet();
+  else if (act === "clear-yes") { closeSheet(); clearMeasurements(); save(); render(); haptic("notify", "warning"); toast("Замеры очищены. Шапка и нормы остались."); }
+  else if (act === "add-kern") { const k = S.kern.mesta[+b.dataset.mi].k; if (k.length < 6) k.push(krK("", "", "", "")); save(); render(); }
+  else if (act === "del-kern") { S.kern.mesta[+b.dataset.mi].k.splice(+b.dataset.i, 1); save(); render(); }
+  else if (act === "add-mesto") { const L = S.kern.mesta; L.push({ n: `Место ${L.length + 1}`, k: [krK("", "", "", "")] }); save(); render(); }
+  else if (act === "del-mesto") { if (S.kern.mesta.length > 1) { S.kern.mesta.splice(+b.dataset.i, 1); save(); render(); } else toast("Должно остаться хотя бы одно место."); }
+  else if (act === "add-pr") { const L = S.bsm.pr; L.push(bsPr(String(L.length + 1))); save(); render(); }
+  else if (act === "del-pr") { if (S.bsm.pr.length > 1) { S.bsm.pr.splice(+b.dataset.i, 1); save(); render(); } else toast("Должна остаться хотя бы одна проба."); }
+  else if (act === "cull") { const o = getP(b.dataset.p); o.x = o.x === "1" ? "" : "1"; save(); render(); }
+  else if (act === "add-obr") { const s = S.obr.ser[+b.dataset.i].s; if (s.length < 6) s.push(obrS("", "")); save(); render(); }
+  else if (act === "del-obr") { const s = S.obr.ser[+b.dataset.i].s; if (s.length > 2) s.pop(); save(); render(); }
+  else if (act === "add-ser") { const L = S.obr.ser; L.push({ p: String(L.length + 1), a: "", b: "", h: "", s: [obrS("", ""), obrS("", ""), obrS("", "")] }); save(); render(); }
+  else if (act === "del-ser") { if (S.obr.ser.length > 1) { S.obr.ser.splice(+b.dataset.i, 1); save(); render(); } else toast("Должна остаться хотя бы одна проба."); }
+  else if (act === "add-sito") { S.sheben.sita.push({ s: "", m: "", mn: "", mx: "" }); save(); render(); }
+  else if (act === "del-sito") { S.sheben.sita.splice(+b.dataset.i, 1); save(); render(); }
+  else if (act === "add-frak") { S.sheben.frak[b.dataset.t].push(fr("", "", "")); save(); render(); }
+  else if (act === "del-frak") { const ps = b.dataset.p.split("/"); const i = +ps.pop(); getP(ps.join("/")).splice(i, 1); save(); render(); }
+  else if (act === "clear") {
+    openSheet("Очистить замеры?", `<p class="sheet-p">Сотру все массы и замеры на вкладке «${esc(MAT[S.mat][1])}». Шапка протокола и нормы останутся.</p>
+      <div class="sheet-actions"><button type="button" class="btn big destructive" data-act="clear-yes">Очистить замеры</button>
+      <button type="button" class="btn big" data-act="sheet-close">Отмена</button></div>`);
+  }
+  else if (act === "word") makeWord();
+});
+function clearMeasurements() {
+  const kd = kindOf();
+  if (kd === "sand") {
+    const P = S[S.mat];
+    Object.keys(P.z).forEach(k => P.z[k] = "");
+    P.glina.forEach(r => { r.m1 = r.x1 = r.m2 = r.x2 = ""; });
+  } else if (kd === "road") {
+    const r = S.otsev.r; Object.keys(r).forEach(k => { if (k !== "klass") r[k] = ""; });
+  } else if (kd === "shps") {
+    const H = S.shps; H.m = ""; H.pm = "";
+    Object.keys(H.o).forEach(k => H.o[k] = ""); Object.keys(H.po).forEach(k => H.po[k] = "");
+    ["p1d", "p1p", "p2d", "p2p", "g1m", "g1x", "g2m", "g2x", "lm", "lx"].forEach(k => H[k] = "");
+  } else if (kd === "kern") {
+    S.kern.mesta.forEach(m => m.k.forEach(k => { k.a = k.b = k.c = k.h = ""; }));
+  } else if (kd === "bsm") {
+    S.bsm.pr.forEach(q => { for (const k in q) if (k !== "n") q[k] = ""; });
+  } else if (kd === "obr") {
+    S.obr.ser.forEach(sr => sr.s.forEach(o => { o.f = o.m = o.x = ""; }));
+  } else if (kd === "sheben") {
+    const T = S.sheben; T.m = ""; T.dno = "";
+    T.sita.forEach(r => r.m = "");
+    Object.values(T.frak).forEach(a => a.forEach(r => { r.m1 = r.x1 = r.m2 = r.x2 = ""; }));
+    T.pyl.forEach(q => { q.do = q.po = ""; });
+  }
+}
+let tt;
+function toast(t) { const el = document.getElementById("toast"); el.textContent = t; el.classList.add("show"); clearTimeout(tt); tt = setTimeout(() => el.classList.remove("show"), 3600); }
+
+/* ================= плавность: вкладки, секции, шторки (в духе iOS) ================= */
+const RM = matchMedia("(prefers-reduced-motion: reduce)");
+const EASE = "cubic-bezier(.32,.72,0,1)"; // кривая iOS для не-жестовых переходов
+function haptic(kind, style) {
+  try {
+    const H = TG && TG.HapticFeedback; if (!H) return;
+    if (kind === "impact") H.impactOccurred(style || "light"); else if (kind === "select") H.selectionChanged(); else H.notificationOccurred(style || "success");
+  } catch (e) { }
+}
+function moveThumb() {
+  const g = document.getElementById("grp"), b = g.querySelector('button[aria-pressed="true"]'), t = g.querySelector(".thumb");
+  if (!b || !t) return;
+  t.style.width = b.offsetWidth + "px"; t.style.transform = `translateX(${b.offsetLeft - 2}px)`;
+  if (!g.classList.contains("ready")) requestAnimationFrame(() => g.classList.add("ready"));
+}
+addEventListener("resize", moveThumb);
+document.fonts && document.fonts.ready.then(moveThumb);
+
+// смена материала: контент въезжает с той стороны, куда ушёл выбор (пространственная логика)
+function switchMat(m) {
+  const order = Object.keys(MAT), dir = Math.sign(order.indexOf(m) - order.indexOf(S.mat)) || 1;
+  S.mat = m; S.last = { ...(S.last || {}), [MAT[m][0]]: m };
+  save(); render(); haptic("select");
+  const pill = document.querySelector(`#mats button[data-m="${m}"]`);
+  pill && pill.scrollIntoView({ inline: "nearest", block: "nearest", behavior: RM.matches ? "auto" : "smooth" });
+  if (view.animate) view.animate(RM.matches ? [{ opacity: 0 }, { opacity: 1 }]
+    : [{ opacity: 0, transform: `translateX(${dir * 24}px)` }, { opacity: 1, transform: "none" }], { duration: RM.matches ? 160 : 340, easing: EASE });
+}
+
+// раскрытие секций: высота анимируется от текущего значения, можно передумать на полпути
+document.addEventListener("click", e => {
+  const s = e.target.closest("details.sec > summary"); if (!s) return;
+  e.preventDefault(); toggleSec(s.parentElement);
+});
+function toggleSec(d) {
+  const body = d.querySelector(":scope > .body"); if (!body) return;
+  const opening = d._anim ? !d._opening : !d.open;
+  const from = d.open ? body.getBoundingClientRect().height : 0, op = d.open ? +getComputedStyle(body).opacity : 0;
+  if (d._anim) d._anim.cancel();
+  d._opening = opening; d.classList.toggle("closing", !opening);
+  if (opening) d.open = true;
+  haptic("select");
+  if (RM.matches || !body.animate) { d._anim = null; if (!opening) { d.open = false; d.classList.remove("closing"); } return; }
+  const to = opening ? body.scrollHeight : 0;
+  body.style.overflow = "hidden";
+  const a = body.animate([{ height: from + "px", opacity: op }, { height: to + "px", opacity: opening ? 1 : 0 }], { duration: 380, easing: EASE });
+  d._anim = a;
+  a.onfinish = () => { d._anim = null; body.style.overflow = ""; if (!opening) { d.open = false; d.classList.remove("closing"); } };
+}
+
+// шторка: пружина (damping/response как в iOS), тянется 1:1 за пальцем, бросок с инерцией, резинка вверх
+const sheetEl = document.getElementById("sheet"), scrimEl = document.getElementById("scrim"), grabEl = document.getElementById("sheet-grab");
+const SH = { y: 0, v: 0, h: 1, raf: 0, open: false, onClose: null, drag: null, back: null };
+function sheetPaint() {
+  sheetEl.style.transform = `translate3d(0,${SH.y}px,0)`;
+  scrimEl.style.opacity = Math.max(0, Math.min(1, 1 - SH.y / SH.h));
+}
+function springTo(target, damping, response, velocity, done) {
+  cancelAnimationFrame(SH.raf);
+  SH.v = velocity ?? SH.v;
+  const k = (2 * Math.PI / response) ** 2, c = 4 * Math.PI * damping / response;
+  let last = performance.now();
+  const step = now => {
+    const dt = Math.min(0.032, (now - last) / 1000) / 4; last = now;
+    for (let i = 0; i < 4; i++) { SH.v += (-k * (SH.y - target) - c * SH.v) * dt; SH.y += SH.v * dt; }
+    if (Math.abs(SH.v) < 4 && Math.abs(SH.y - target) < 0.4) { SH.y = target; SH.v = 0; sheetPaint(); done && done(); return; }
+    sheetPaint(); SH.raf = requestAnimationFrame(step);
+  };
+  SH.raf = requestAnimationFrame(step);
+}
+const project = (v, d = 0.998) => (v / 1000) * d / (1 - d);           // куда «докатится» бросок
+const rubber = (x, dim, c = 0.55) => (x * dim * c) / (dim + c * x);     // сопротивление за краем
+function openSheet(title, html, onClose) {
+  SH.back = document.activeElement;
+  document.getElementById("sheet-t").textContent = title;
+  const c = document.getElementById("sheet-c"); c.innerHTML = html; c.scrollTop = 0;
+  SH.onClose = onClose || null;
+  const wasHidden = sheetEl.hidden;
+  sheetEl.hidden = false; scrimEl.hidden = false; scrimEl.classList.add("on");
+  document.documentElement.classList.add("sheet-open");
+  SH.h = sheetEl.offsetHeight || 1;
+  if (wasHidden) { SH.y = SH.h; SH.v = 0; } // если шторка ещё уезжала — подхватываем с текущего места
+  SH.open = true; sheetPaint();
+  try { TG && TG.BackButton && TG.BackButton.show(); TG && TG.disableVerticalSwipes && TG.disableVerticalSwipes(); } catch (e) { }
+  haptic("impact", "light");
+  if (RM.matches) { SH.y = 0; sheetPaint(); sheetEl.animate && sheetEl.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200 }); }
+  else springTo(0, 1, 0.42);
+  sheetEl.focus({ preventScroll: true });
+}
+function closeSheet(velocity) {
+  if (!SH.open) return;
+  SH.open = false; scrimEl.classList.remove("on");
+  const fin = () => { if (SH.open) return; sheetEl.hidden = true; scrimEl.hidden = true; document.documentElement.classList.remove("sheet-open"); };
+  if (RM.matches) { SH.y = SH.h; sheetPaint(); fin(); }
+  else springTo(SH.h + 24, 1, 0.36, velocity ?? 0, fin);
+  try { TG && TG.BackButton && TG.BackButton.hide(); TG && TG.enableVerticalSwipes && TG.enableVerticalSwipes(); } catch (e) { }
+  const cb = SH.onClose; SH.onClose = null; cb && cb();
+  const back = SH.back; SH.back = null;
+  if (back && back.isConnected && back.tagName === "BUTTON") back.focus({ preventScroll: true });
+}
+grabEl.addEventListener("pointerdown", e => {
+  if (!SH.open || e.button > 0 || e.target.closest("button")) return;
+  cancelAnimationFrame(SH.raf); // хватаем на лету — от текущего положения, без рывка
+  grabEl.setPointerCapture(e.pointerId);
+  SH.drag = { id: e.pointerId, y0: e.clientY, sy: SH.y, hist: [[performance.now(), e.clientY]] };
+  sheetEl.classList.add("dragging");
+});
+grabEl.addEventListener("pointermove", e => {
+  const d = SH.drag; if (!d || e.pointerId !== d.id) return;
+  const y = d.sy + e.clientY - d.y0;
+  SH.y = y < 0 ? -rubber(-y, SH.h) : y; sheetPaint();
+  d.hist.push([performance.now(), e.clientY]); if (d.hist.length > 6) d.hist.shift();
+});
+function dragEnd(e) {
+  const d = SH.drag; if (!d || e.pointerId !== d.id) return;
+  SH.drag = null; sheetEl.classList.remove("dragging");
+  const a = d.hist[0], b = d.hist[d.hist.length - 1];
+  let v = b[0] > a[0] ? (b[1] - a[1]) / (b[0] - a[0]) * 1000 : 0;
+  if (performance.now() - b[0] > 90) v = 0; // палец остановился — инерции нет
+  if (SH.y + project(v) > SH.h * 0.45) closeSheet(v);
+  else springTo(0, 0.82, 0.3, v); // возврат после броска — с лёгким отскоком
+}
+grabEl.addEventListener("pointerup", dragEnd);
+grabEl.addEventListener("pointercancel", dragEnd);
+document.addEventListener("keydown", e => { if (e.key === "Escape" && SH.open) closeSheet(); });
+// ровная линия под шапкой появляется, только когда под неё уехал контент
+const topEl = document.querySelector("header.top");
+addEventListener("scroll", () => topEl.classList.toggle("scrolled", scrollY > 2), { passive: true });
+
+/* ================= Word ================= */
+function dP(text, o = {}) {
+  return new docx.Paragraph({
+    alignment: o.c ? docx.AlignmentType.CENTER : docx.AlignmentType.LEFT, spacing: { after: o.after ?? 60, before: 0 },
+    children: [new docx.TextRun({ text: String(text), bold: !!o.b, size: (o.size || 11) * 2 })],
+  });
+}
+function dT(rows, o = {}) {
+  const head = o.head ?? 1, size = (o.size || 10) * 2, n = rows[0].length, total = 10000;
+  const first = o.first || Math.round(total * (n > 4 ? 0.2 : 0.35));
+  const other = n > 1 ? Math.floor((total - first) / (n - 1)) : total;
+  const widths = [first, ...Array(n - 1).fill(other)];
+  return [new docx.Table({
+    columnWidths: widths,
+    rows: rows.map((r, i) => new docx.TableRow({
+      children: r.map((c, j) => new docx.TableCell({
+        width: { size: widths[j], type: docx.WidthType.DXA },
+        children: [new docx.Paragraph({ alignment: j > 0 ? docx.AlignmentType.CENTER : docx.AlignmentType.LEFT, children: [new docx.TextRun({ text: c == null ? "" : String(c), bold: i < head, size })] })],
+      })),
+    })),
+  }), dP("", { after: 0, size: 4 })];
+}
+function dHead(sh, title, gost, m) {
+  const L = k => shl(m, k);
+  // если в протоколе бланк лаборатории с названием — второй раз название не печатаем
+  const blankName = ME && ME.full && ME.profile && ME.profile.name;
+  const out = [...(blankName ? [] : [dP(sh.lab, { b: 1, c: 1, size: 13, after: 0 })]), dP(title, { b: 1, c: 1, size: 12, after: 0 })];
+  if (sh.zakl) out.push(dP(sh.zakl, { c: 1, size: 9, after: 0 }));
+  out.push(dP("Протокол № " + sh.nomer, { c: 1, after: 120 }));
+  out.push(...dT([
+    [L("mark"), sh.mark, L("data_otb"), sh.data_otb],
+    [L("karer"), sh.karer, "Дата испытания", sh.data_isp],
+    [L("mesto"), sh.mesto, "", ""],
+  ], { head: 0 }));
+  out.push(dP(gost, { b: 1, size: 10 }));
+  return out;
+}
+function dFrac(res, col) {
+  const rows = [["Фракция, мм", "№ пробы", "Масса пробы, г", col, "Результат, %", "Среднее по фракции, %"]];
+  res.rows.filter(g => g.sr != null).forEach(g => g.pr.forEach((q, k) => rows.push([k ? "" : g.nazv, q.i, kr(q.m), kr(q.x), f(q.p), k ? "" : f(g.sr)])));
+  return dT(rows);
+}
+function dFoot(sh, warn) {
+  const out = [dP("Примечание:", { b: 1 })];
+  (warn.length ? warn : ["—"]).forEach(w => out.push(dP(w === "—" ? w : "• " + w, { size: 10 })));
+  out.push(dP(""), dP(`Испытание провёл: ______________ (подпись)    ${sh.dolzh}    ${sh.fio}`), dP(""));
+  out.push(dP("Прототип. Расчёт, нормы и форма требуют проверки перед применением.", { size: 8 }));
+  return out;
+}
+const vt = v => (v ? ` (${v})` : "");
+function docPesok(m = "pesok") {
+  const T = SANDT[m], P = S[m], R = calcPesok(P, m), z = k => num(P.z[k]), nr = k => R.N[k] ?? null;
+  if (R.Mk == null || R.po10 == null) throw new Error("Заполни массу пробы и остатки на ситах 10, 5 и 2,5–0,16.");
+  const c = [...dHead(P.sh, T.title, `Отбор проб и испытания проведены по ${T.gost}, ГОСТ 8735-88`)];
+  c.push(dP("1. Зерновой состав", { b: 1 }), dP(`Масса пробы m = ${kr(z("m_gr"))} г`, { size: 10 }));
+  c.push(...dT([["Размер сит, мм", "10", "5"], ["масса, г", kr(z("o10")), kr(z("o5"))], ["Ч.О., %", f(R.cho10), f(R.cho5)], ["П.О., %", f(R.po10), f(R.po5)],
+    ["Требования " + T.gost, normText(null, nr("gr10_max")) + vt(oc(R.po10, null, nr("gr10_max"))), normText(null, nr("gr5_max")) + vt(oc(R.po5, null, nr("gr5_max")))]]));
+  if (R.W != null) c.push(dP(`Влажность: m1 = ${kr(z("w_m1"))} г, m2 = ${kr(z("w_m2"))} г, W = ${f(R.W)} %`, { size: 10 }));
+  c.push(dP(`Зерновой состав песка (масса навески m = ${kr(z("m"))} г)`, { b: 1, size: 10 }));
+  const treb = ["Требования " + T.gost, "", "", normText(nr("po063_min"), nr("po063_max")) + vt(oc(R.po[key(0.63)], nr("po063_min"), nr("po063_max"))), "", "", nr("pr016_max") != null ? "проход " + normText(null, nr("pr016_max")) + vt(oc(R.prohod, null, nr("pr016_max"))) : ""];
+  c.push(...dT([["Размер сит, мм", ...SAND.map(kr), "менее 0,16"], ["масса, г", ...SAND.map(s => kr(z("o_" + s))), kr(z("o_dno"))],
+    ["Ч.О., %", ...SAND.map(s => f(R.cho[key(s)])), f(R.cho_dno)], ["П.О., %", ...SAND.map(s => f(R.po[key(s)])), f(R.po_dno)], treb], { size: 9 }));
+  c.push(dP(`Модуль крупности Мк = ${f(R.Mk, 2)} — песок ${R.group || "вне групп " + T.gost}${klassText(P) ? ", класс " + klassText(P) : ""}.`, { b: 1 }));
+  if (P.cfg.klass !== "manual") c.push(dP(`Нормы приняты по ${T.gost} для песка класса ${P.cfg.klass}, группа: ${R.group || "—"}${P.cfg.gruppa === "auto" ? " (по Мк)" : ""}` +
+    `${P.cfg.asf === "1" ? "; песок для асфальтобетона — содержание зёрен менее 0,16 мм не нормируется" : ""}.`, { size: 9 }));
+  if (R.poteri != null) c.push(dP(`Расхождение суммы остатков с навеской: ${f(R.poteri, 2)} %`, { size: 9 }));
+  c.push(dP("2. Содержание пылевидных и глинистых частиц", { b: 1 }));
+  if (R.pyl == null) c.push(dP("Не испытывалось", { size: 10 }));
+  else c.push(...dT([["Показатель", "Значение"], ["Масса пробы, г", kr(z("p_m"))], ["Масса пробы после промывки через сито 0,05 и высушивания, г", kr(z("p_m1"))],
+    ["Результат испытания, %", f(R.pyl)], ["Требования " + T.gost, normText(null, nr("pyl_max")) + vt(oc(R.pyl, null, nr("pyl_max")))]], { first: 6500 }));
+  c.push(dP("3. Содержание глины в комках", { b: 1 }));
+  if (R.glina.sv == null) c.push(dP("Не испытывалось", { size: 10 }));
+  else { c.push(...dFrac(R.glina, "Масса глины, г")); c.push(dP(`Средневзвешенное: ${f(R.glina.sv)} %. Требование: ${normText(null, nr("glina_max"))}${vt(oc(R.glina.sv, null, nr("glina_max")))}`, { size: 10 })); }
+  c.push(dP("4. Определение насыпной плотности", { b: 1 }));
+  if (!R.plotn.length) c.push(dP("Не испытывалось", { size: 10 }));
+  else { c.push(...dT([["№ пробы", "Масса мерного цилиндра, кг", "Масса цилиндра + песок, кг", "Объём цилиндра, м³", "Насыпная плотность, кг/м³"], ...R.plotn.map(q => [q.i, kr(q.c), kr(q.f), String(q.v).replace(".", ","), f(q.ro, 0)])], { first: 1500 })); c.push(dP(`Среднее значение: ${f(R.plotn_sr, 0)} кг/м³`, { size: 10 })); }
+  c.push(...dFoot(P.sh, R.warn));
+  return { children: c, name: m === "otsev" ? "отсев" : "песок", sh: P.sh };
+}
+function docSheben() {
+  const T = S.sheben, R = calcSheben(T), nr = k => num(T.nr[k]);
+  if (!R.dno) throw new Error("Заполни массу пробы и остатки на ситах.");
+  const c = [...dHead(T.sh, "Лист результатов измерений щебня", "Отбор проб проведён по ГОСТ 33048-2014")];
+  const g = T.cfg, [fd, fD] = fracDD(g);
+  if (fd > 0 && fD > fd) c.push(dP(`Фракция ${kr(fd)}–${kr(fD)} мм (${TYPE_TXT[fracType(fd, fD)]}). Порода: ${PORODA[g.poroda].toLowerCase()}. ` +
+    `Марка по зерновому составу ${g.zs}${g.poroda === "gravii" ? "" : ", по лещадности " + g.les}, по дробимости ${g.drob}. Требования по ГОСТ 32703-2014 (с Изм. № 1, 2).`, { size: 10 }));
+  c.push(dP("Зерновой состав смеси по ГОСТ 33029-2014", { b: 1 }), dP(`Масса пробы: ${kr(num(T.m))} г`, { size: 10 }));
+  const s = R.sita, rr = r => R.rs[r.idx];
+  c.push(...dT([["Размер сит, мм", ...s.map(r => kr(r.s)), "менее"], ["масса, г", ...s.map(r => kr(r.m ?? 0)), kr(num(T.dno) ?? 0)],
+    ["Ч.О., %", ...s.map(r => f(rr(r).a)), f(R.dno.a)], ["П.О., %", ...s.map(r => f(rr(r).po)), f(R.dno.po)], ["П.П., %", ...s.map(r => f(rr(r).pp)), f(100 - R.dno.po)],
+    ["Требования (П.П.)", ...s.map(r => normText(r.mn, r.mx) + vt(rr(r).v)), ""]], { size: 9 }));
+  if (R.ok != null) c.push(dP("Зерновой состав " + (R.ok ? "соответствует" : "НЕ соответствует") + " заданным требованиям.", { b: 1 }));
+  c.push(dP(`Расхождение суммы остатков с массой пробы: ${f(R.poteri, 2)} %`, { size: 9 }));
+  for (const t in TESTS) {
+    const d = TESTS[t], res = R.frak[t], mx = nr(t + "_max");
+    c.push(dP(`${d.full} по ${d.gost}`, { b: 1 }));
+    if (res.sv == null) { c.push(dP("Не испытывалось", { size: 10 })); continue; }
+    c.push(...dFrac(res, d.col));
+    c.push(dP(`Средневзвешенное: ${f(res.sv)} %` + (mx != null ? `. Требование: ${normText(null, mx)}${vt(oc(res.sv, null, mx))}` : "") +
+      (t === "les" && g.poroda !== "gravii" ? `. Фактическая марка по лещадности: ${lesMark(res.sv)}` : ""), { size: 10 }));
+  }
+  c.push(dP("Содержание пылевидных и глинистых частиц по ГОСТ 33055-2014", { b: 1 }));
+  if (!R.pyl.length) c.push(dP("Не испытывалось", { size: 10 }));
+  else {
+    c.push(...dT([["№ пробы", "Масса пробы до промывки, г", "Масса пробы после промывки, г", "Результат испытания, %"], ...R.pyl.map(q => [q.i, kr(q.d), kr(q.po), f(q.p)])], { first: 1500 }));
+    const mx = nr("pyl_max");
+    c.push(dP(`Среднее: ${f(R.pyl_sr)} %` + (mx != null ? `. Требование: ${normText(null, mx)}${vt(oc(R.pyl_sr, null, mx))}` : ""), { size: 10 }));
+  }
+  c.push(...dFoot(T.sh, R.warn));
+  return { children: c, name: "щебень", sh: T.sh };
+}
+function docRoad() {
+  const O = S.otsev, r = O.r, R = calcRoad(O), N = R.N, z = k => num(r[k]);
+  if (R.Mk == null) throw new Error("Заполни мерную пробу и остатки на ситах 2–0,125.");
+  const c = [...dHead(O.sh, "Лист результатов измерений песка дробленого", "Отбор проб по ГОСТ 32728-2014, испытания по ГОСТ 32727, 32725, 32726-2014")];
+  c.push(dP(`Требования по ГОСТ 32730-2014 для песка класса ${R.kl}.`, { size: 10 }));
+  c.push(dP("1. Содержание зёрен крупнее 8 и 4 мм", { b: 1 }), dP(`Масса лабораторной пробы: ${kr(z("m"))} г`, { size: 10 }));
+  c.push(...dT([["Показатель", "Масса, г", "Результат, %", "Требование, % не более"],
+    ["Св. 8 мм", kr(z("o8")), f(R.p8), normText(null, N.p8_max) + vt(oc(R.p8, null, N.p8_max))],
+    ["Св. 4 мм (включая св. 8)", kr((z("o8") ?? 0) + (z("o4") ?? 0)), f(R.p4), normText(null, N.p4_max) + vt(oc(R.p4, null, N.p4_max))]], { first: 3000 }));
+  if (R.W != null) c.push(dP(`Влажность: m1 = ${kr(z("w1"))} г, m2 = ${kr(z("w2"))} г, W = ${f(R.W)} %`, { size: 10 }));
+  c.push(dP(`2. Зерновой состав мерной пробы (масса ${kr(z("mm"))} г) по ГОСТ 32727-2014`, { b: 1 }));
+  const lost = z("mw") != null ? z("mm") - z("mw") : 0;
+  c.push(...dT([["Размер сит, мм", ...RD_SITA.map(kr), "поддон"], ["масса, г", ...RD_SITA.map(s => kr(z("o_" + s))), kr((z("dno") ?? 0) + lost)],
+    ["Ч.О., %", ...RD_SITA.map(s => f(R.cho[key(s)])), f(R.cho_dno)], ["П.О., %", ...RD_SITA.map(s => f(R.po[key(s)])), f(R.po_dno)],
+    ["Требования ГОСТ 32730", "", "", normText(N.po05_min, N.po05_max) + vt(oc(R.po[key(0.5)], N.po05_min, N.po05_max)), "", "", "менее 0,125: " + normText(null, N.p0125_max) + vt(oc(R.cho_dno, null, N.p0125_max))]], { size: 9 }));
+  c.push(dP(`Модуль крупности Мк = ${f(R.Mk, 1)} — песок ${R.group || "вне групп ГОСТ 32730"}, класс ${R.kl}.`, { b: 1 }));
+  if (R.poteri != null) c.push(dP(`Расхождение суммы остатков с мерной пробой: ${f(R.poteri, 2)} %`, { size: 9 }));
+  c.push(dP("3. Содержание пылевидных и глинистых частиц по ГОСТ 32725-2014", { b: 1 }));
+  c.push(R.pyl == null ? dP("Не испытывалось", { size: 10 }) : dP(`До промывки ${kr(z("mm"))} г, после ${kr(z("mw"))} г. Результат: ${f(R.pyl)} %. Требование: ${normText(null, N.pyl_max)}${vt(oc(R.pyl, null, N.pyl_max))}`, { size: 10 }));
+  c.push(dP("4. Содержание глины в комках по ГОСТ 32726-2014", { b: 1 }));
+  c.push(R.glina == null ? dP("Не испытывалось", { size: 10 }) : dP(`Масса пробы ${kr(z("gm"))} г, глины ${kr(z("gx"))} г. Результат: ${f(R.glina, 2)} %. Требование: ${normText(null, N.glina_max)}${vt(oc(R.glina, null, N.glina_max))}`, { size: 10 }));
+  c.push(...dFoot(O.sh, R.warn));
+  return { children: c, name: "отсев", sh: O.sh };
+}
+function docShps() {
+  const H = S.shps, R = calcShps(H), sm = SHPS[H.smes] || SHPS["С5"], z = v => num(v);
+  if (R.a1 == null) throw new Error("Заполни массу пробы и остатки на ситах 120–5.");
+  const c = [...dHead(H.sh, "Лист результатов измерений щебеночно-песчаной смеси", "Отбор проб по ГОСТ 8269.0, испытания по ГОСТ 25607-2009, ГОСТ 8269.0, ГОСТ 8735")];
+  c.push(dP(`Смесь ${H.smes} (для ${sm[0]}, наибольший размер зёрен ${sm[1]} мм). Требования по ГОСТ 25607-2009, табл. 3.`, { size: 10 }));
+  c.push(dP(`1. Зерновой состав (масса пробы ${kr(z(H.m))} г; щебень ${f(R.a1)} %, песок ${f(R.a2)} %; навеска песка ${kr(z(H.pm))} г)`, { b: 1 }));
+  c.push(...dT([["Размер сит, мм", ...SHPS_SITA.map(kr)],
+    ["П.О. смеси, %", ...SHPS_SITA.map(s => f(R.po[key(s)]))],
+    ["Требования ГОСТ 25607", ...SHPS_SITA.map((s, i) => normText(R.NR[i][0], R.NR[i][1]) + vt(R.v[i]))]], { size: 8, first: 1800 }));
+  if (R.ok != null) c.push(dP(`Зерновой состав ${R.ok ? "соответствует" : "НЕ соответствует"} смеси ${H.smes}.`, { b: 1 }));
+  c.push(dP("2. Содержание пылевидных и глинистых частиц (п. 5.7)", { b: 1 }));
+  c.push(R.psm == null ? dP("Не испытывалось", { size: 10 }) : dP(`Щебень П1 = ${f(R.p1)} %, песок П2 = ${f(R.p2)} %. В смеси Псм = (П1·a1 + П2·a2)/100 = ${f(R.psm)} % (П.О. на сите 0,05 = ${f(R.po["0.05"])} %).`, { size: 10 }));
+  c.push(dP("3. Содержание глины в комках (п. 5.8)", { b: 1 }));
+  c.push(R.gsm == null ? dP("Не испытывалось", { size: 10 }) : dP(`Щебень ${f(R.g1, 2)} %, песок ${f(R.g2, 2)} %. В смеси ${f(R.gsm, 2)} %` + (R.gdol != null ? `, от пылевидных ${f(R.gdol)} %. Требование: ${normText(null, R.gdol_max)}${vt(oc(R.gdol, null, R.gdol_max))}` : "") + ".", { size: 10 }));
+  c.push(dP("4. Содержание зёрен пластинчатой и игловатой формы в щебне", { b: 1 }));
+  c.push(R.les == null ? dP("Не испытывалось", { size: 10 }) : dP(`Результат: ${f(R.les)} %. Требование: до 35${vt(oc(R.les, null, 35))}`, { size: 10 }));
+  c.push(...dFoot(H.sh, R.warn));
+  return { children: c, name: "ЩПС", sh: H.sh };
+}
+function docObr() {
+  const B = S.obr, R = calcObr(B), F = R.F;
+  if (R.n === 0) throw new Error("Заполни нагрузки хотя бы в одной пробе (минимум 2 образца).");
+  const c = [...dHead(B.sh, "Протокол испытаний бетона на прочность при сжатии", "Испытания по ГОСТ 10180-2012, оценка прочности по ГОСТ 18105-2018 (схема Г)", "obr")];
+  c.push(dP(`Проектный класс B${kr(R.kl)}${R.proc !== 100 ? `; требуемая прочность в данном возрасте ${kr(R.proc)} % от класса (${f(R.Bn)} МПа)` : ""}. Образцы: ${F[0].toLowerCase()}, масштабный коэффициент α = ${f(F[1], 2)}.` +
+    (R.age != null ? ` Возраст бетона: ${R.age} сут.` : ""), { size: 10 }));
+  const rows = [["Проба", "№ обр.", "Размеры, мм", "Масса, г", "Плотность, кг/м³", "Нагрузка F, кН", "R, МПа", "Прочность серии, МПа"]];
+  R.ser.forEach(s => s.sm.filter(o => o.f != null).forEach((o, k) => rows.push([k ? "" : s.p, o.i, F[4] ? `${kr(s.a)}×${kr(s.h)}` : `${kr(s.a)}×${kr(s.b)}×${kr(s.h)}`,
+    o.m == null ? "—" : kr(o.m), o.rho == null ? "—" : f(o.rho, 0), kr(o.f), o.r == null ? "—" : (o.x ? f(o.r) + " (брак)" : o.u ? f(o.r) : f(o.r) + " (не учт.)"), k ? "" : (s.Rs == null ? "не учитывается" : f(s.Rs))])));
+  c.push(...dT(rows, { size: 9, first: 900 }));
+  c.push(dP("Прочность серии — по п. 8.4 ГОСТ 10180-2012 (из 3 образцов — по двум наибольшим, из 4 — по трём, из 6 — по четырём).", { size: 8 }));
+  c.push(dP("Оценка прочности по ГОСТ 18105-2018", { b: 1 }));
+  c.push(dP(`Число проб n = ${R.n}; средняя прочность Rm = ${f(R.Rm)} МПа; минимальная ${f(R.Rmin)} МПа` + (R.Vm != null ? `; Sm = ${f(R.Sm, 2)} МПа; Vm = ${f(R.Vm)} %` + (R.Vr != null ? ` (граничный Vr = ${f(R.Vr)} %)` : "") : "") + ".", { size: 10 }));
+  if (B.naz === "smes") c.push(dP(`Бетонная смесь: требуемая прочность Rт = 1,28 × ${f(R.Bn)} = ${f(R.Rt)} МПа. Rm ${R.ok1 ? "≥" : "<"} Rт; Rmin ${R.ok2 ? "≥" : "<"} ${f(R.Bn)} МПа.`, { size: 10 }));
+  else c.push(dP(`Монолитная конструкция: фактический класс Bф = 0,8 × Rm = ${f(R.Bf)} МПа ${R.ok ? "≥" : "<"} ${f(R.Bn)} МПа.`, { size: 10 }));
+  c.push(dP(`Заключение: прочность бетона ${R.ok ? "соответствует" : "НЕ соответствует"} классу B${kr(R.kl)}${R.proc !== 100 ? ` (${kr(R.proc)} % в данном возрасте)` : ""}.`, { b: 1 }));
+  c.push(...dFoot(B.sh, R.warn));
+  return { children: c, name: "бетон", sh: B.sh };
+}
+async function makeWord() {
+  // страницу отдаёт бот, но открыли её не из Telegram: Word только через бота (там лимит и тарифы)
+  if (window.LAB_API && !TG) { toast("Протокол в Word — через Telegram-бота @labkit_ru_bot. Расчёты здесь работают бесплатно."); return; }
+  if (typeof docx === "undefined") { toast("Библиотека для Word не загрузилась: нужен интернет. Расчёты работают и без него."); return; }
+  let d;
+  const kd = kindOf();
+  try { d = kd === "sand" ? docPesok(S.mat) : kd === "road" ? docRoad() : kd === "shps" ? docShps() : kd === "obr" ? docObr() : kd === "bsm" ? docBsm() : kd === "kern" ? docKern() : docSheben(); } catch (e) { toast(e.message); return; }
+  if (ME && ME.full) { try { d.children.unshift(...await blankBlock()); } catch (e) { console.warn("бланк", e); } }
+  const doc = new docx.Document({
+    styles: { default: { document: { run: { font: "Times New Roman", size: 22 } } } },
+    sections: [{ properties: { page: { margin: { left: 1134, right: 567, top: 850, bottom: 850 } } }, children: d.children }],
+  });
+  const blob = await docx.Packer.toBlob(doc);
+  const safe = String(d.sh.nomer || "без_номера").replace(/[^\p{L}\p{N}_-]+/gu, "_");
+  const filename = `протокол_${d.name}_${safe}.docx`;
+  if (LOCAL) { try { await jrAdd({ filename, blob, mat: MAT[S.mat][1], nomer: d.sh.nomer || "", mark: d.sh.mark || "" }); } catch (e) { console.warn("журнал", e); } }
+  if (TG && window.LAB_API) {
+    toast("Отправляю протокол в чат…");
+    try {
+      const b64 = await new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1]); r.onerror = no; r.readAsDataURL(blob); });
+      const meta = { mat: MAT[S.mat][1], nomer: d.sh.nomer || "", mark: d.sh.mark || "" };
+      const res = await fetch(window.LAB_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ initData: TG.initData, filename, b64, grp: MAT[S.mat][0], meta }) });
+      const j = await res.json().catch(() => ({}));
+      if (res.ok && j.ok) {
+        toast("Протокол отправлен в чат с ботом ✅" + (j.left != null ? ` Бесплатных осталось: ${j.left}` : ""));
+        haptic("notify", "success");
+      } else if (res.status === 402) {
+        toast(j.error || "Бесплатные протоколы закончились. Тарифы — в чате с ботом.");
+        haptic("notify", "warning");
+      } else toast(j.error || "Не получилось отправить. Попробуй ещё раз через минуту.");
+    } catch (e) { toast("Нет связи с ботом. Проверь интернет и что бот запущен."); }
+    return;
+  }
+  let dl = null;
+  try { dl = window.claude && window.claude.use ? await window.claude.use("downloads") : null; } catch (e) { dl = null; }
+  if (dl) {
+    try { await dl.save({ filename, data: blob }); toast("Протокол сохранён: " + filename); }
+    catch (e) { toast(e && e.code === "declined" ? "Сохранение отменено." : e && e.code === "rate_limited" ? "Окно сохранения уже открыто." : "Сохранение здесь недоступно. Открой страницу в браузере."); }
+    return;
+  }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+  toast("Протокол скачан: " + filename);
+}
+
+/* ================= бланк лаборатории и журнал протоколов (через бота) ================= */
+const API_BASE = window.LAB_API ? String(window.LAB_API).replace(/send$/, "") : null;
+let ME = null, LOGO_NEW; // LOGO_NEW: undefined — не менять, "" — убрать, dataURL — новый
+/* ---- локальный режим: бланк в localStorage, журнал (с самими .docx) в IndexedDB ---- */
+const BLANK_KEY = "labkit-blank-v1";
+function idb() {
+  return new Promise((ok, no) => {
+    const r = indexedDB.open("labkit", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("journal", { keyPath: "id" });
+    r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error);
+  });
+}
+async function jrTx(mode, fn) {
+  const db = await idb();
+  return new Promise((ok, no) => {
+    const t = db.transaction("journal", mode), st = t.objectStore("journal"); let out;
+    Promise.resolve(fn(st)).then(v => { out = v; });
+    t.oncomplete = () => ok(out); t.onerror = () => no(t.error);
+  });
+}
+const reqP = rq => new Promise((ok, no) => { rq.onsuccess = () => ok(rq.result); rq.onerror = () => no(rq.error); });
+function jrAdd(it) {
+  const d = new Date(), p = n => String(n).padStart(2, "0");
+  const rec = { ...it, id: d.getTime() + "-" + Math.random().toString(36).slice(2, 6), date: `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}` };
+  return jrTx("readwrite", st => reqP(st.put(rec)));
+}
+const jrAll = () => jrTx("readonly", st => reqP(st.getAll())).then(a => (a || []).sort((x, y) => y.id.localeCompare(x.id)));
+function blankLocal() { try { return JSON.parse(localStorage.getItem(BLANK_KEY)) || {}; } catch (e) { return {}; } }
+function downloadBlob(blob, filename) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+}
+async function localApi(path, body) {
+  const bl = blankLocal();
+  if (path === "me") {
+    let n = 0; try { n = (await jrAll()).length; } catch (e) { }
+    return { ok: true, local: true, full: true, profile: bl.profile || {}, logo: bl.logo || "", journal_count: n };
+  }
+  if (path === "profile") {
+    const profile = { name: body.name, address: body.address, attestat: body.attestat, contacts: body.contacts };
+    const logo = body.logo === null ? (bl.logo || "") : body.logo;
+    try { localStorage.setItem(BLANK_KEY, JSON.stringify({ profile, logo })); } catch (e) { return { ok: false, error: "Не получилось сохранить: память браузера переполнена или запрещена." }; }
+    return { ok: true, profile, logo };
+  }
+  if (path === "journal") {
+    try { const items = await jrAll(); return { ok: true, items, count: items.length }; }
+    catch (e) { return { ok: false, error: "Журнал недоступен в этом браузере (приватный режим?)." }; }
+  }
+  if (path === "resend") {
+    const it = (await jrAll()).find(x => x.id === body.id);
+    if (!it) return { ok: false, error: "Протокол не найден." };
+    downloadBlob(it.blob, it.filename); return { ok: true };
+  }
+  return { ok: false, error: "Недоступно без бота." };
+}
+async function api(path, body = {}) {
+  if (LOCAL) return localApi(path, body);
+  const r = await fetch(API_BASE + path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ initData: TG.initData, ...body }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok && !j.error) j.error = "Нет связи с ботом. Попробуй ещё раз.";
+  j.status = r.status;
+  return j;
+}
+async function loadMe() {
+  if (!LOCAL && (!TG || !API_BASE)) return;
+  try { const j = await api("me"); if (j.ok) ME = j; } catch (e) { }
+}
+function imgSize(src) {
+  return new Promise((ok, no) => { const i = new Image(); i.onload = () => ok([i.naturalWidth, i.naturalHeight]); i.onerror = no; i.src = src; });
+}
+// шапка протокола с логотипом и реквизитами лаборатории (тариф «Вся лаборатория»)
+async function blankBlock() {
+  const p = ME.profile || {}, out = [];
+  const lines = [[p.name, 1, 12], [p.address], [p.attestat], [p.contacts]].filter(l => l[0]);
+  if (!ME.logo && !lines.length) return out;
+  const line = { bottom: { style: docx.BorderStyle.SINGLE, size: 6, color: "000000", space: 4 } };
+  if (ME.logo) {
+    const [w0, h0] = await imgSize(ME.logo), k = Math.min(48 / h0, 180 / w0);
+    const bin = atob(ME.logo.split(",")[1]), u8 = Uint8Array.from(bin, c => c.charCodeAt(0));
+    out.push(new docx.Paragraph({ spacing: { after: 60 }, border: lines.length ? undefined : line,
+      children: [new docx.ImageRun({ data: u8, transformation: { width: Math.round(w0 * k), height: Math.round(h0 * k) } })] }));
+  }
+  lines.forEach(([t, b, s], i) => out.push(new docx.Paragraph({ spacing: { after: 0 }, border: i === lines.length - 1 ? line : undefined,
+    children: [new docx.TextRun({ text: String(t), bold: !!b, size: (s || 9) * 2 })] })));
+  out.push(new docx.Paragraph({ spacing: { after: 160 }, children: [] }));
+  return out;
+}
+const ICON_BOOK = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2.5h8.5a1.5 1.5 0 0 1 1.5 1.5v9.5H4.5A1.5 1.5 0 0 1 3 12z"/><path d="M3 12a1.5 1.5 0 0 1 1.5-1.5H13M6 5.5h4"/></svg>';
+const ICON_STAR = '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.6l1.9 4 4.3.5-3.2 3 .9 4.3L8 11.2l-3.9 2.2.9-4.3-3.2-3 4.3-.5z"/></svg>';
+function menuRow(act, icon, title, sub, badge = "") {
+  return `<button type="button" class="row-link" data-act="${act}"><span class="ico" aria-hidden="true">${icon}</span><span class="tx"><b>${title}</b><small>${sub}</small></span>${badge}</button>`;
+}
+function menuHtml() {
+  if (LOCAL) return `<div class="menu-list">
+    ${menuRow("blank", ICON_DOC, "Бланк лаборатории", "Логотип и реквизиты в шапке протокола")}
+    ${menuRow("journal", ICON_BOOK, "Журнал протоколов", `На этом устройстве: ${ME ? ME.journal_count : 0}`)}
+    ${menuRow("about", ICON_STAR, "О приложении", "Работает без интернета, данные на устройстве")}
+  </div>`;
+  const lock = ME && ME.full ? "" : '<span class="lock">1 990 ₽</span>';
+  const plan = !ME ? "Нет связи с ботом" : ME.plan_name ? `${esc(ME.plan_name)} до ${esc(ME.until)}` : `Пробный: осталось протоколов ${ME.left} из 2`;
+  return `<div class="menu-list">
+    ${menuRow("blank", ICON_DOC, "Бланк лаборатории", "Логотип и реквизиты в шапке протокола", lock)}
+    ${menuRow("journal", ICON_BOOK, "Журнал протоколов", `В журнале: ${ME ? ME.journal_count : "—"}`, lock)}
+    ${menuRow("plan", ICON_STAR, "Тариф", plan)}
+  </div>`;
+}
+function planHtml() {
+  return `<p class="sheet-p">${ME && ME.plan_name ? `Сейчас: <b>${esc(ME.plan_name)}</b> до ${esc(ME.until)}.` : `Сейчас пробный: осталось протоколов ${ME ? ME.left : "—"} из 2.`}</p>
+    <div class="sheet-card"><b>Один раздел — 990 ₽/мес</b><p class="sheet-p" style="margin:4px 0 0">Безлимит протоколов в одном разделе: Инертные, Бетон или Асфальт.</p></div>
+    <div class="sheet-card"><b>Вся лаборатория — 1 990 ₽/мес</b><p class="sheet-p" style="margin:4px 0 0">Все разделы, бланк лаборатории с логотипом в протоколе и журнал всех протоколов.</p></div>
+    <p class="sheet-p">Чтобы подключить, закрой лист и напиши боту, какой тариф нужен. Ответим там же.</p>`;
+}
+// установка как приложения (Chrome/Edge/Android отдают событие; на iPhone — через «Поделиться»)
+let INSTALL = null;
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); INSTALL = e; });
+function aboutHtml() {
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  const inst = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  return `<p class="sheet-p"><b>LabKit</b> — лист испытаний с расчётами по ГОСТ и протоколом в Word.</p>
+    <div class="sheet-card"><b>Работает без интернета</b><p class="sheet-p" style="margin:4px 0 0">Открой один раз с интернетом, дальше расчёты и Word работают офлайн: в карьере, на объекте, в подвале лаборатории.</p></div>
+    <div class="sheet-card"><b>Данные на этом устройстве</b><p class="sheet-p" style="margin:4px 0 0">Черновик, бланк и журнал протоколов хранятся только здесь и никуда не отправляются. Если очистить данные браузера, они удалятся.</p></div>
+    ${inst ? '<p class="sheet-p">Приложение установлено ✓</p>'
+      : INSTALL ? '<button type="button" class="btn big primary" data-act="install">Установить на устройство</button>'
+      : `<p class="sheet-p">Чтобы поставить иконку на экран: ${ios ? "в Safari нажми «Поделиться» → «На экран „Домой“»" : "в меню браузера выбери «Установить приложение» или «Добавить на главный экран»"}.</p>`}
+    <p class="sheet-p">Удобнее в Telegram? Есть бот <a href="https://t.me/labkit_ru_bot" target="_blank" rel="noopener">@labkit_ru_bot</a>: протоколы приходят прямо в чат.</p>`;
+}
+function blankHtml() {
+  const p = (ME && ME.profile) || {}, f = (id, label, ph) =>
+    `<label class="f"><span>${label}</span><input type="text" id="${id}" autocomplete="off" placeholder="${ph}" value="${esc(p[id.slice(3)] || "")}"></label>`;
+  return `${ME && ME.full ? "" : '<p class="sheet-p">Бланк попадает в протокол на тарифе «Вся лаборатория». Заполнить его можно уже сейчас.</p>'}
+    <div class="sheet-card logo-card">
+      <div class="logo-box" id="logo-box">${ME && ME.logo ? `<img src="${ME.logo}" alt="Логотип лаборатории">` : "Логотип не загружен"}</div>
+      <div class="row-btns"><label class="btn" for="logo-file">Загрузить логотип</label>
+        <input type="file" id="logo-file" accept="image/png,image/jpeg" hidden>
+        <button type="button" class="btn danger" id="logo-del" data-act="logo-del"${ME && ME.logo ? "" : " hidden"}>Убрать</button></div>
+      <p class="hint">PNG или JPG. Лучше горизонтальный, на светлом фоне.</p>
+    </div>
+    <div class="fields sheet-card" style="grid-template-columns:1fr">
+      ${f("bl-name", "Название лаборатории", "ООО «Лаборатория», ИЛ «…»")}
+      ${f("bl-address", "Адрес", "г. Ростов-на-Дону, ул. …")}
+      ${f("bl-attestat", "Аттестат аккредитации", "№ RA.RU.21… от …")}
+      ${f("bl-contacts", "Контакты", "Телефон, e-mail")}
+    </div>
+    <button type="button" class="btn big primary" data-act="blank-save">Сохранить бланк</button>`;
+}
+// логотип уменьшаем на телефоне до 600×240, чтобы не гонять большие файлы
+document.addEventListener("change", async e => {
+  if (e.target.id !== "logo-file" || !e.target.files[0]) return;
+  const file = e.target.files[0];
+  try {
+    const src = await new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = no; r.readAsDataURL(file); });
+    const [w, h] = await imgSize(src), k = Math.min(1, 600 / w, 240 / h);
+    const cv = document.createElement("canvas"); cv.width = Math.round(w * k); cv.height = Math.round(h * k);
+    const png = file.type === "image/png", ctx = cv.getContext("2d");
+    if (!png) { ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height); }
+    ctx.drawImage(await new Promise(ok => { const i = new Image(); i.onload = () => ok(i); i.src = src; }), 0, 0, cv.width, cv.height);
+    LOGO_NEW = png ? cv.toDataURL("image/png") : cv.toDataURL("image/jpeg", .9);
+    if (LOGO_NEW.length > 400000) { LOGO_NEW = undefined; toast("Логотип слишком большой, попробуй картинку попроще."); return; }
+    document.getElementById("logo-box").innerHTML = `<img src="${LOGO_NEW}" alt="Новый логотип">`;
+    document.getElementById("logo-del").hidden = false;
+  } catch (err) { toast("Не получилось открыть картинку. Нужен PNG или JPG."); }
+});
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const act = b.dataset.act;
+  if (act === "menu") { await loadMe(); openSheet("Меню", menuHtml()); }
+  else if (act === "plan") openSheet("Тариф", planHtml());
+  else if (act === "about") openSheet("О приложении", aboutHtml());
+  else if (act === "install") {
+    if (!INSTALL) return;
+    INSTALL.prompt(); const r = await INSTALL.userChoice.catch(() => null);
+    if (r && r.outcome === "accepted") { INSTALL = null; closeSheet(); toast("Готово! LabKit теперь на рабочем столе."); }
+  }
+  else if (act === "blank") { LOGO_NEW = undefined; openSheet("Бланк лаборатории", blankHtml()); }
+  else if (act === "logo-del") { LOGO_NEW = ""; document.getElementById("logo-box").textContent = "Логотип не загружен"; b.hidden = true; }
+  else if (act === "blank-save") {
+    const v = id => document.getElementById(id).value;
+    b.disabled = true;
+    const j = await api("profile", { name: v("bl-name"), address: v("bl-address"), attestat: v("bl-attestat"), contacts: v("bl-contacts"), logo: LOGO_NEW === undefined ? null : LOGO_NEW });
+    b.disabled = false;
+    if (!j.ok) { toast(j.error); return; }
+    ME = { ...(ME || {}), profile: j.profile, logo: j.logo };
+    closeSheet(); haptic("notify", "success");
+    toast(ME.full ? "Бланк сохранён. Он будет в шапке каждого протокола." : "Бланк сохранён. В протоколе появится на тарифе «Вся лаборатория».");
+  }
+  else if (act === "journal") {
+    openSheet("Журнал протоколов", '<p class="sheet-p">Загружаю…</p>');
+    const j = await api("journal");
+    const c = document.getElementById("sheet-c");
+    if (!SH.open || document.getElementById("sheet-t").textContent !== "Журнал протоколов") return;
+    if (!j.ok) c.innerHTML = `<p class="sheet-p">${esc(j.error)}</p>`;
+    else if (j.locked) c.innerHTML = `<p class="sheet-p">В журнале уже ${j.count} протокол(ов). Журнал открывается на тарифе «Вся лаборатория» — 1 990 ₽/мес.</p>
+      <p class="sheet-p">Чтобы подключить, закрой лист и напиши боту.</p>`;
+    else if (!j.items.length) c.innerHTML = LOCAL ? '<p class="sheet-p">Пока пусто. Каждый протокол Word, который ты скачаешь, сохранится здесь, на этом устройстве.</p>'
+      : '<p class="sheet-p">Пока пусто. Каждый протокол, который ты отправишь в чат, появится здесь.</p>';
+    else c.innerHTML = `<p class="sheet-p">Всего: ${j.count}. ${LOCAL ? "Протоколы хранятся на этом устройстве, нажми «Скачать», чтобы получить файл ещё раз." : "Нажми «В чат», и бот пришлёт протокол ещё раз."}</p><div class="jr-list">` +
+      j.items.map(it => `<div class="jr-item"><span class="tx"><b>${it.nomer ? "№ " + esc(it.nomer) : "Без номера"} · ${esc(it.mat || "")}</b><span>${[it.mark, it.date].filter(Boolean).map(esc).join(" · ")}</span></span>
+        <button type="button" class="btn" data-act="resend" data-id="${esc(it.id)}">${LOCAL ? "Скачать" : "В чат"}</button></div>`).join("") + "</div>";
+  }
+  else if (act === "resend") {
+    b.disabled = true;
+    const j = await api("resend", { id: b.dataset.id });
+    b.disabled = false;
+    if (j.ok) { b.textContent = LOCAL ? "Скачано ✓" : "Отправил ✓"; haptic("notify", "success"); } else toast(j.error);
+  }
+});
+
+if (TG) {
+  try { TG.ready(); TG.expand(); } catch (e) { }
+  if (API_BASE) { document.getElementById("btn-menu").hidden = false; loadMe(); }
+  const applyTheme = () => {
+    document.documentElement.dataset.theme = TG.colorScheme === "dark" ? "dark" : "light";
+    try {
+      if (TG.isVersionAtLeast && TG.isVersionAtLeast("6.9")) {
+        const bg = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim();
+        TG.setHeaderColor(bg); TG.setBackgroundColor(bg);
+      }
+    } catch (e) { }
+  };
+  applyTheme();
+  try { TG.onEvent("themeChanged", applyTheme); TG.BackButton && TG.BackButton.onClick(() => closeSheet()); } catch (e) { }
+  document.getElementById("btn-word").textContent = "Протокол в чат";
+  cloudLoad();
+}
+if (LOCAL) { document.getElementById("btn-menu").hidden = false; loadMe(); }
+render();
+</script>
+<script>
+if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(e => console.warn("sw", e)));
+</script>
+<!-- Yandex.Metrika counter -->
+<script>
+(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r){return;}}k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,'script','https://mc.yandex.ru/metrika/tag.js?id=114173330','ym');
+ym(114173330,'init',{ssr:true,webvisor:true,clickmap:true,accurateTrackBounce:true,trackLinks:true});
+document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[href*="t.me/labkit_ru_bot"]');if(a){ym(114173330,'reachGoal','bot_click');}});
+</script>
+<noscript><div><img src="https://mc.yandex.ru/watch/114173330" style="position:absolute;left:-9999px" alt=""></div></noscript>
+<!-- /Yandex.Metrika counter -->
+</html>
