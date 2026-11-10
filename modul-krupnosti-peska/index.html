@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Модуль крупности песка онлайн — калькулятор по ГОСТ 8735 | LabKit</title>
+<meta name="description" content="Бесплатный расчёт модуля крупности песка по ГОСТ 8735 и группы песка по ГОСТ 8736-2014. Частные и полные остатки на ситах 2,5–0,16 мм считаются при вводе.">
+<link rel="canonical" href="https://thwy1.github.io/modul-krupnosti-peska/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Модуль крупности песка онлайн">
+<meta property="og:description" content="Остатки на ситах, Мк и группа песка по ГОСТ 8736. Бесплатно.">
+<meta property="og:url" content="https://thwy1.github.io/modul-krupnosti-peska/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23007aff'/%3E%3Ctext x='16' y='22' font-family='Arial' font-weight='700' font-size='17' fill='white' text-anchor='middle'%3EL%3C/text%3E%3C/svg%3E">
+<style>
+/* Layout: one calm column like an iOS app screen — title, sieve card with live residues, result card, bot CTA, other calculators, short how-to for search. Same look as the LabKit mini-app. */
+:root {
+  --bg: #f2f2f7;
+  --surface: #ffffff;
+  --input: rgba(118, 118, 128, .12);
+  --fg: #1c1c1e;
+  --muted: #6e6e73;
+  --line: rgba(60, 60, 67, .18);
+  --accent: #007aff;
+  --accent-soft: rgba(0, 122, 255, .1);
+  --accent-ring: rgba(0, 122, 255, .22);
+  --accent-fg: #ffffff;
+  --ok: #248a3d;
+  --ok-soft: rgba(52, 199, 89, .14);
+  --bad: #d70015;
+  --bad-soft: rgba(255, 59, 48, .1);
+  --tg: #229ed9;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --ease: cubic-bezier(.32, .72, 0, 1);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #000000; --surface: #1c1c1e; --input: rgba(118, 118, 128, .24); --fg: #f5f5f7; --muted: #98989f; --line: rgba(84, 84, 88, .65);
+    --accent: #0a84ff; --accent-soft: rgba(10, 132, 255, .18); --accent-ring: rgba(10, 132, 255, .35);
+    --ok: #30d158; --ok-soft: rgba(48, 209, 88, .16); --bad: #ff453a; --bad-soft: rgba(255, 69, 58, .16); --tg: #2aabee; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #000000; --surface: #1c1c1e; --input: rgba(118, 118, 128, .24); --fg: #f5f5f7; --muted: #98989f; --line: rgba(84, 84, 88, .65);
+  --accent: #0a84ff; --accent-soft: rgba(10, 132, 255, .18); --accent-ring: rgba(10, 132, 255, .35);
+  --ok: #30d158; --ok-soft: rgba(48, 209, 88, .16); --bad: #ff453a; --bad-soft: rgba(255, 69, 58, .16); --tg: #2aabee; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.45 var(--font-body); letter-spacing: -.01em;
+  -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: calc(28px + env(safe-area-inset-top, 0px)) calc(48px + env(safe-area-inset-bottom, 0px));
+}
+.page { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.brand { text-decoration: none; display: flex; align-items: center; gap: 8px; font: 600 .9rem var(--font-body); color: var(--muted); }
+.brand i { width: 22px; height: 22px; border-radius: 6px; background: var(--accent); display: grid; place-items: center; color: #fff; font-style: normal; font-size: .75rem; font-weight: 700; }
+h1 { font: 700 clamp(1.9rem, 6vw, 2.4rem)/1.08 var(--font-display); letter-spacing: -.03em; margin: 4px 0 0; text-wrap: balance; }
+.lead { margin: 0; color: var(--muted); max-width: 52ch; }
+h2 { font: 600 1.15rem/1.25 var(--font-display); letter-spacing: -.02em; margin: 0; }
+.card { background: var(--surface); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.card-h { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.tag { font-size: .75rem; color: var(--muted); }
+.mass { display: flex; align-items: center; gap: 12px; }
+.mass label { flex: 1; color: var(--muted); font-size: .92rem; }
+input {
+  font: 600 1.05rem var(--font-body); font-variant-numeric: tabular-nums; color: var(--fg); background: var(--input);
+  border: 1px solid transparent; border-radius: 10px; padding: 9px 10px; width: 100%; min-width: 0; text-align: right;
+  -webkit-appearance: none; appearance: none; transition: border-color .2s, box-shadow .2s, background-color .2s;
+}
+input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-ring); }
+input.bad { border-color: var(--bad); background: var(--bad-soft); }
+.mass input { width: 7.5rem; flex: none; }
+.tbl { display: grid; grid-template-columns: minmax(3.6rem, auto) minmax(5rem, 1fr) 4.2rem 4.2rem; gap: 8px 10px; align-items: center; font-variant-numeric: tabular-nums; }
+.tbl .h { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+.tbl .h.r, .tbl output { text-align: right; }
+.tbl .s { font-weight: 600; }
+.tbl output { font-size: .98rem; }
+.tbl output.full { font-weight: 600; }
+.sep { grid-column: 1 / -1; height: .5px; background: var(--line); }
+.row-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn {
+  font: 600 .92rem var(--font-body); border: 0; border-radius: 10px; padding: 9px 14px; cursor: pointer;
+  background: var(--input); color: var(--accent); transition: transform .12s ease-out, opacity .15s;
+}
+.btn:active { transform: scale(.96); }
+.btn:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.result { gap: 10px; }
+.mk { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.mk-num { font: 700 3.4rem/1 var(--font-display); letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.mk-cap { color: var(--muted); font-size: .92rem; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; font: 600 .92rem var(--font-body); background: var(--input); }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.fact { background: var(--input); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+.fact span { font-size: .78rem; color: var(--muted); }
+.fact b { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.note { font-size: .88rem; color: var(--muted); margin: 0; }
+.note.warn { color: var(--bad); }
+.formula { font-size: .9rem; color: var(--muted); margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+.cta { background: var(--fg); color: var(--bg); }
+.cta h2 { font-size: 1.3rem; }
+.cta ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.cta li { display: flex; gap: 10px; align-items: baseline; opacity: .9; }
+.cta li::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--tg); transform: translateY(-2px); }
+.tg-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; border-radius: 14px; padding: 14px 18px;
+  background: var(--tg); color: #fff; font: 600 1.05rem var(--font-body); transition: transform .12s ease-out, opacity .15s;
+}
+.tg-btn:active { transform: scale(.97); opacity: .9; }
+.cta small { opacity: .65; text-align: center; }
+
+.list { background: var(--surface); border-radius: 16px; overflow: hidden; }
+.item { display: flex; align-items: center; gap: 12px; padding: 13px 16px; }
+.item + .item { box-shadow: inset 0 .5px 0 var(--line); }
+.item .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.item .tx b { font-weight: 600; }
+.item .tx span { font-size: .85rem; color: var(--muted); }
+.soon { font-size: .78rem; color: var(--muted); background: var(--input); border-radius: 999px; padding: 3px 9px; flex: none; }
+.how { display: flex; flex-direction: column; gap: 10px; }
+.how ol { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 6px; }
+.how p { margin: 0; }
+footer { color: var(--muted); font-size: .8rem; text-align: center; }
+@media (prefers-reduced-motion: reduce) { *, *::before { transition-duration: .01ms !important; } }
+</style>
+</head>
+<body>
+
+<main class="page">
+  <div>
+    <a class="brand" href="../"><i aria-hidden="true">L</i>LabKit · все калькуляторы</a>
+    <h1>Модуль крупности песка</h1>
+  </div>
+  <p class="lead">Вбей навеску и остатки на ситах. Частные и полные остатки, Мк и группа песка по ГОСТ 8736-2014 считаются сразу. Бесплатно и без регистрации.</p>
+
+  <section class="card" aria-labelledby="h-sieve">
+    <div class="card-h"><h2 id="h-sieve">Рассев на ситах</h2><span class="tag">ГОСТ 8735-88, п. 3</span></div>
+    <div class="mass"><label for="m">Навеска песка (без зёрен крупнее 5 мм), г</label><input id="m" inputmode="decimal" autocomplete="off" value="1000"></div>
+    <div class="tbl" id="tbl">
+      <div class="h">Сито, мм</div><div class="h r">Остаток, г</div><div class="h r">Частн., %</div><div class="h r">Полн., %</div>
+    </div>
+    <div class="row-btns">
+      <button type="button" class="btn" id="b-clear">Очистить</button>
+      <button type="button" class="btn" id="b-ex">Вернуть пример</button>
+    </div>
+    <p class="note" id="ex-note">В полях стоит пример. Замени цифры на свои.</p>
+  </section>
+
+  <section class="card result" aria-labelledby="h-res" aria-live="polite">
+    <div class="card-h"><h2 id="h-res">Результат</h2><span class="tag">ГОСТ 8736-2014, табл. 1</span></div>
+    <div class="mk"><span class="mk-num" id="mk">—</span><span class="mk-cap">модуль крупности Мк</span></div>
+    <div><span class="pill" id="grp">Заполни все сита</span></div>
+    <div class="facts">
+      <div class="fact"><span>Полный остаток на 0,63</span><b id="a063">—</b></div>
+      <div class="fact"><span>Проход через 0,16</span><b id="p016">—</b></div>
+      <div class="fact"><span>Потери при рассеве</span><b id="lost">—</b></div>
+    </div>
+    <p class="note" id="r-note"></p>
+    <p class="formula" id="formula">Мк = (A2,5 + A1,25 + A0,63 + A0,315 + A0,16) / 100</p>
+  </section>
+
+  <section class="card cta" aria-labelledby="h-cta">
+    <h2 id="h-cta">Нужен готовый протокол в Word?</h2>
+    <ul>
+      <li>Песок, щебень, отсев, ЩПС, бетон и керны асфальта в одном месте</li>
+      <li>Нормы по ГОСТ подставляются сами, видно «соответствует / нет»</li>
+      <li>Протокол с шапкой, номером и подписью приходит в чат за секунду</li>
+      <li>Черновики не теряются, можно продолжить с телефона</li>
+    </ul>
+    <a class="tg-btn" href="https://t.me/labkit_ru_bot" target="_blank" rel="noopener">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21.9 4.3 18.7 19.4c-.2 1-.9 1.3-1.7.8l-4.8-3.5-2.3 2.2c-.3.3-.5.5-1 .5l.3-4.9 8.9-8c.4-.3-.1-.5-.6-.2l-11 6.9-4.7-1.5c-1-.3-1-1 .2-1.5L20.6 3c.9-.3 1.6.2 1.3 1.3z"/></svg>
+      Открыть бота @labkit_ru_bot
+    </a>
+    <small>Попробовать можно бесплатно</small>
+  </section>
+
+  <section aria-labelledby="h-more" style="display:flex;flex-direction:column;gap:10px">
+    <h2 id="h-more">Другие калькуляторы</h2>
+    <div class="list">
+      <div class="item"><span class="tx"><b>Зерновой состав щебня</b><span>ГОСТ 32703-2014 с изм. 1 и 2: фракция, марка 90/10, 85/15…</span></span><span class="soon">скоро</span></div>
+      <div class="item"><span class="tx"><b>Прочность бетона по образцам</b><span>ГОСТ 10180 и ГОСТ 18105, схема Г</span></span><span class="soon">скоро</span></div>
+      <div class="item"><span class="tx"><b>Пустоты в кернах асфальтобетона</b><span>ГОСТ Р 58406.2, 58401.10</span></span><span class="soon">скоро</span></div>
+    </div>
+  </section>
+
+  <section class="card how" aria-labelledby="h-how">
+    <h2 id="h-how">Как считается модуль крупности</h2>
+    <ol>
+      <li>Песок без зёрен крупнее 5 мм просеивают через сита 2,5; 1,25; 0,63; 0,315 и 0,16 мм и взвешивают остаток на каждом.</li>
+      <li>Частный остаток: масса на сите, делённая на навеску, × 100 %.</li>
+      <li>Полный остаток: сумма частных остатков на этом сите и на всех ситах крупнее.</li>
+      <li>Мк: сумма полных остатков на пяти ситах, делённая на 100.</li>
+    </ol>
+    <p>Группу песка определяют по Мк и сверяют с полным остатком на сите 0,63: например, у крупного песка Мк от 2,5 до 3,0, а остаток на 0,63 от 45 до 65 %.</p>
+  </section>
+
+  <footer>Расчёт ориентировочный. Для официального протокола сверяйтесь с действующими редакциями ГОСТ.</footer>
+</main>
+
+<script>
+"use strict";
+const SITA = ["2,5", "1,25", "0,63", "0,315", "0,16"];
+const EX = { m: "1000", s: ["60", "130", "330", "320", "130"], dno: "28" };
+// ГОСТ 8736-2014, табл. 1 и 2: [группа, Мк св., Мк до, полный остаток на 0,63 от, до]
+const GR = [["повышенной крупности", 3.0, 3.5, 65, 75], ["крупный", 2.5, 3.0, 45, 65], ["средний", 2.0, 2.5, 30, 45],
+  ["мелкий", 1.5, 2.0, 10, 30], ["очень мелкий", 1.0, 1.5, null, 10], ["тонкий", 0.7, 1.0, null, null], ["очень тонкий", -1, 0.7, null, null]];
+const $ = id => document.getElementById(id);
+const num = s => { const t = String(s).trim().replace(",", "."); if (t === "") return null; const v = Number(t); return Number.isFinite(v) ? v : null; };
+const r = (x, n) => Math.round((x + Number.EPSILON) * 10 ** n) / 10 ** n;
+const f = (x, n = 1) => x == null || !Number.isFinite(x) ? "—" : r(x, n).toFixed(n).replace(".", ",");
+
+const tbl = $("tbl");
+const rows = [...SITA.map((s, i) => [s, "s" + i]), ["дно", "dno"]];
+tbl.insertAdjacentHTML("beforeend", rows.map(([s, id], i) =>
+  (i === rows.length - 1 ? '<div class="sep"></div>' : "") +
+  `<div class="s">${s}</div><input id="${id}" inputmode="decimal" autocomplete="off" aria-label="Остаток на сите ${s}, г"><output id="${id}-a"></output><output class="full" id="${id}-A"></output>`).join(""));
+$("dno-A").textContent = "";
+
+function fill(ex) {
+  $("m").value = ex ? EX.m : "";
+  SITA.forEach((_, i) => $("s" + i).value = ex ? EX.s[i] : "");
+  $("dno").value = ex ? EX.dno : "";
+  $("ex-note").hidden = !ex;
+  calc();
+}
+function calc() {
+  document.querySelectorAll("input").forEach(el => el.classList.toggle("bad", el.value.trim() !== "" && num(el.value) == null));
+  const m = num($("m").value);
+  const vals = SITA.map((_, i) => num($("s" + i).value)), dno = num($("dno").value);
+  let A = 0, all = m > 0;
+  const full = [];
+  vals.forEach((v, i) => {
+    const a = m > 0 && v != null ? v / m * 100 : null;
+    if (a == null) all = false; else A += a;
+    full.push(all ? A : null);
+    $(`s${i}-a`).textContent = f(a); $(`s${i}-A`).textContent = all ? f(A) : "—";
+  });
+  $("dno-a").textContent = f(m > 0 && dno != null ? dno / m * 100 : null);
+
+  const grp = $("grp"), note = $("r-note");
+  grp.className = "pill"; note.className = "note"; note.textContent = "";
+  if (!all) {
+    $("mk").textContent = "—"; grp.textContent = m > 0 ? "Заполни все сита" : "Укажи навеску";
+    $("a063").textContent = $("p016").textContent = $("lost").textContent = "—";
+    $("formula").textContent = "Мк = (A2,5 + A1,25 + A0,63 + A0,315 + A0,16) / 100";
+    return;
+  }
+  const Mk = full.reduce((p, c) => p + c, 0) / 100, mk2 = r(Mk, 2), a063 = full[2];
+  $("mk").textContent = f(Mk, 2);
+  $("formula").textContent = `Мк = (${full.map(x => f(x)).join(" + ")}) / 100 = ${f(Mk, 2)}`;
+  $("a063").textContent = f(a063) + " %"; $("p016").textContent = f(100 - full[4]) + " %";
+  if (dno != null) {
+    const lost = (m - vals.reduce((p, c) => p + c, 0) - dno) / m * 100;
+    $("lost").textContent = f(lost, 2) + " %";
+    if (Math.abs(lost) > 1) { note.className = "note warn"; note.textContent = `Сумма остатков отличается от навески на ${f(Math.abs(lost))} %. Проверь взвешивания.`; }
+  } else $("lost").textContent = "—";
+
+  const g = GR.find(([, lo, hi]) => mk2 > lo && mk2 <= hi);
+  if (!g) { grp.textContent = "Вне групп ГОСТ 8736"; grp.classList.add("bad"); return; }
+  const [name, , , lo, hi] = g, a = r(a063, 1);
+  const okA = (lo == null || a >= lo) && (hi == null || a <= hi);
+  grp.textContent = "Песок " + name;
+  grp.classList.add(okA ? "ok" : "bad");
+  if (!note.textContent && (lo != null || hi != null))
+    note.textContent = okA ? `Остаток на 0,63 (${f(a063)} %) подтверждает группу: норма ${lo ?? 0}–${hi} %.`
+      : `По Мк песок ${name}, но остаток на 0,63 (${f(a063)} %) вне нормы ${lo ?? 0}–${hi} %. Проверь рассев.`;
+}
+document.addEventListener("input", e => { if (e.target.tagName === "INPUT") { $("ex-note").hidden = true; calc(); } });
+$("b-clear").addEventListener("click", () => { fill(false); $("m").focus(); });
+$("b-ex").addEventListener("click", () => fill(true));
+fill(true);
+</script>
+</body>
+</html>
